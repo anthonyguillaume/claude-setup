@@ -1,0 +1,501 @@
+<title>Suivi du projet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout : tableau de suivi ardoise - en-tête quadrillé, jalons, tuiles chiffrées, tokens (modèle, plateforme, jour), rôles, worktrees, agents, CI, PR, étapes clés. Sombre d'abord, clair en miroir. */
+:root {
+  --ground: #0D181E; --panel: #12212A; --panel-2: #162A34; --edge: #25404C; --rule: #23394399; --row: #1C313B; --track: #1F3540;
+  --text: #E4EDF0; --muted: #8CA3AD; --faint: #6F8792;
+  --ice: #62C9E2; --violet: #A495F5; --violet-bg: #2A2647;
+  --ok: #4FC48C; --ok-bg: #173528; --warn: #E5AC4C; --warn-bg: #3A2E17; --bad: #EA6A5E; --bad-bg: #3A1F22; --idle-bg: #1D2E36;
+  /* séries validées (dataviz, surface panneau) : sortie / entrée + écriture cache ; lecture cache et jours volontairement en retrait */
+  --s-out: #22A0B8; --s-in: #8E78F0; --s-cache: #2F5361; --s-day: #3B6F80; --s-today: #62C9E2;
+  --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --ground: #EDF2F4; --panel: #FFFFFF; --panel-2: #F4F8F9; --edge: #D2DFE3; --rule: #D9E5E8AA; --row: #E3ECEF; --track: #DCE7EA;
+  --text: #10242A; --muted: #4D666E; --faint: #627A82;
+  --ice: #0F7FA3; --violet: #5B48C9; --violet-bg: #E9E5FC;
+  --ok: #17803F; --ok-bg: #E1F3E8; --warn: #9A6408; --warn-bg: #FBF0DC; --bad: #B8322A; --bad-bg: #FBE6E4; --idle-bg: #E8EEF0;
+  --s-out: #1488AE; --s-in: #6A57D6; --s-cache: #7A969F; --s-day: #7A969F; --s-today: #1488AE;
+  color-scheme: light; } }
+:root[data-theme="light"] {
+  --ground: #EDF2F4; --panel: #FFFFFF; --panel-2: #F4F8F9; --edge: #D2DFE3; --rule: #D9E5E8AA; --row: #E3ECEF; --track: #DCE7EA;
+  --text: #10242A; --muted: #4D666E; --faint: #627A82;
+  --ice: #0F7FA3; --violet: #5B48C9; --violet-bg: #E9E5FC;
+  --ok: #17803F; --ok-bg: #E1F3E8; --warn: #9A6408; --warn-bg: #FBF0DC; --bad: #B8322A; --bad-bg: #FBE6E4; --idle-bg: #E8EEF0;
+  --s-out: #1488AE; --s-in: #6A57D6; --s-cache: #7A969F; --s-day: #7A969F; --s-today: #1488AE;
+  color-scheme: light; }
+
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--text); font: 15px/1.45 var(--body); padding-block: 20px 48px; padding-inline: clamp(16px, 3vw, 40px); }
+.wrap { max-width: 1360px; margin: 0 auto; display: grid; gap: 18px; }
+h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+.panel { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 20px clamp(14px, 3vw, 22px); min-width: 0; }
+.eyebrow { font: 600 12px/1.3 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ice); }
+.muted { color: var(--muted); } .faint { color: var(--faint); }
+.num { font-variant-numeric: tabular-nums; }
+a { color: var(--ice); }
+a:focus-visible { outline: 2px solid var(--ice); outline-offset: 2px; }
+.empty { color: var(--muted); font-style: italic; }
+
+.hero { background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: 28px 28px; }
+.hero h1 { font-size: clamp(36px, 5vw, 56px); font-weight: 700; margin: 10px 0 4px; }
+.hero p { margin: 6px 0 0; max-width: 72ch; }
+.running { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font: 600 12.5px/1.5 var(--body); background: var(--violet-bg); color: var(--violet); white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); } .pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); } .pill.idle { background: var(--idle-bg); color: var(--muted); }
+
+.head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.head h2 { font-size: 26px; font-weight: 700; }
+.ms { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 12px; }
+.card { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 10px; padding: 13px 14px; display: grid; gap: 8px; align-content: start; }
+.card.done { border-top: 3px solid var(--ok); } .card.active { border-color: var(--violet); }
+.card .top { display: flex; justify-content: space-between; font: 600 12px var(--mono); color: var(--muted); }
+.card .top b { color: var(--text); font: 700 15px var(--display); }
+.card h3 { font-size: 18px; font-weight: 600; line-height: 1.15; }
+.bar { height: 7px; border-radius: 4px; background: var(--track); overflow: hidden; display: flex; gap: 2px; }
+.bar i { display: block; height: 100%; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; }
+.stat { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 16px 18px; display: grid; gap: 4px; align-content: start; }
+.stat .k { font: 600 11.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.stat .v { font: 700 40px/1.05 var(--display); font-variant-numeric: tabular-nums; }
+.stat .v small { font: 500 18px var(--display); color: var(--muted); }
+.stat .s { font-size: 13px; color: var(--muted); }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 18px; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--edge); white-space: nowrap; }
+td { padding: 7px 8px; border-bottom: 1px solid var(--row); vertical-align: top; }
+td:first-child { white-space: nowrap; }
+td.r, th.r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.mono { font: 12.5px var(--mono); }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.mrow { display: grid; grid-template-columns: 110px 1fr 80px; gap: 10px; align-items: center; margin: 9px 0; }
+.mrow .name { font: 600 16px var(--display); }
+.mrow .bar { height: 12px; background: transparent; }
+.mrow .bar i:last-child { border-radius: 0 4px 4px 0; }
+.plat { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.plat > div { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 10px; padding: 12px; display: grid; gap: 2px; align-content: start; }
+.plat b { font: 700 26px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.plat .k { font: 600 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.plat .s { font-size: 12.5px; color: var(--faint); }
+#days svg { display: block; }
+#days text { fill: var(--muted); font: 11px var(--mono); }
+#days text.val { fill: var(--text); font-weight: 600; }
+#days line { stroke: var(--row); }
+#days line.base { stroke: var(--edge); }
+#days rect.hit { fill: transparent; }
+#days g:hover path { opacity: .8; }
+.timeline { display: grid; }
+.ev { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--row); font-size: 13.5px; }
+.ev:last-child { border-bottom: 0; }
+.ev time { font: 12px var(--mono); color: var(--faint); padding-top: 2px; }
+.now { display: grid; gap: 10px; }
+.alerts { display: grid; gap: 6px; margin-top: 12px; }
+.alert { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; background: var(--warn-bg); overflow-wrap: anywhere; }
+.alert.bad { background: var(--bad-bg); }
+.you ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; max-width: 80ch; }
+.task { display: grid; grid-template-columns: 64px 1fr auto; gap: 4px 14px; align-items: start; padding: 12px 14px; background: var(--panel-2); border: 1px solid var(--row); border-left: 3px solid var(--edge); border-radius: 8px; }
+.task.running { border-left-color: var(--violet); } .task.review { border-left-color: var(--warn); } .task.blocked { border-left-color: var(--bad); } .task.done { border-left-color: var(--ok); }
+.task .id { font: 600 15px/1.4 var(--mono); color: var(--ice); }
+.task .t { font-weight: 600; min-width: 0; }
+.task .meta { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--muted); min-width: 0; }
+.task .meta b { color: var(--text); font-weight: 600; }
+.task .note { grid-column: 2 / 4; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.lists { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; margin-top: 16px; }
+.lists h3 { font: 700 15px/1.3 var(--display); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.lists ol, .lists ul { margin: 0; padding-left: 20px; font-size: 13.5px; display: grid; gap: 4px; }
+@media (max-width: 560px) { .task { grid-template-columns: 1fr auto; } .task .id { grid-column: 1 / 3; } .task .meta, .task .note { grid-column: 1 / 3; } }
+@media (max-width: 560px) { .mrow { grid-template-columns: 76px 1fr 64px; } .ev { grid-template-columns: 1fr; gap: 2px; } .stat .v { font-size: 34px; } }
+@media (prefers-reduced-motion: no-preference) { .bar i { transition: width .4s ease; } }
+.map svg { width: 100%; height: auto; display: block; color: var(--text); }
+.map .node rect { fill: var(--panel-2); stroke: var(--edge); stroke-width: 1.5; }
+.map .node.done rect { stroke: var(--ok); }
+.map .node.now rect { stroke: var(--violet); stroke-width: 2.5; fill: var(--violet-bg); }
+.map .node text { fill: currentColor; font: 600 13px var(--body); }
+.map .node .sub { fill: var(--muted); font: 500 11px var(--mono); }
+.map .edge { stroke: var(--edge); stroke-width: 2; fill: none; }
+.map .edge.done { stroke: var(--ok); }
+.map .edge.next { stroke: var(--violet); stroke-dasharray: 6 6; }
+.map .agent rect { fill: var(--panel); stroke: var(--ice); }
+.map .agent text { fill: currentColor; font: 500 11px var(--mono); }
+.map .agent .dot { fill: var(--ice); }
+.map .gate polygon { stroke-width: 1.5; }
+.map .gate.agreement polygon { fill: var(--ok-bg); stroke: var(--ok); }
+.map .gate.disagreement polygon { fill: var(--warn-bg); stroke: var(--warn); }
+.map .gate.claudeOnly polygon, .map .gate.unknown polygon { fill: var(--idle-bg); stroke: var(--muted); }
+.map .gate text { fill: currentColor; font: 600 10px var(--mono); }
+@media (prefers-reduced-motion: no-preference) {
+  .map .edge.next { animation: flow 1s linear infinite; }
+  .map .node.now rect { animation: pulse 2s ease-in-out infinite; }
+  .map .agent .dot { animation: blink 1.2s ease-in-out infinite; }
+}
+@keyframes flow { to { stroke-dashoffset: -12; } }
+@keyframes pulse { 50% { stroke-opacity: .45; } }
+@keyframes blink { 50% { opacity: .25; } }
+.mshare { display: grid; gap: 10px; }
+.mshare .row { display: grid; grid-template-columns: 90px 1fr 120px; gap: 10px; align-items: center; }
+.mshare .row .bar { height: 10px; background: var(--track); border-radius: 5px; overflow: hidden; }
+.mshare .row .bar i { display: block; height: 100%; background: var(--ice); }
+</style>
+
+<div class="wrap">
+  <header class="panel hero">
+    <div class="eyebrow">Tableau de suivi - Claude orchestre, GPT challenge, les agents construisent</div>
+    <h1 id="title">Suivi du projet</h1>
+    <div class="muted" id="updated">En attente des premières données du collecteur...</div>
+    <div class="alerts" id="alerts" role="status" hidden></div>
+    <p class="muted" id="summary">Un plan par chantier, des agents spécialisés, Claude et GPT qui se challengent à chaque porte.</p>
+  </header>
+
+  <section class="stats" id="stats" aria-label="Indicateurs clés"></section>
+
+  <section class="panel map" aria-labelledby="h-map">
+    <div class="head"><h2 id="h-map">Le cycle en direct</h2><span class="muted" id="map-sum"></span></div>
+    <figure style="margin:0">
+      <svg id="map" viewBox="0 0 1000 320" role="img" aria-label="Cycle du projet : étape en cours, agents au travail et débats aux portes"></svg>
+      <figcaption class="muted" id="map-cap">L'étape en cours est encadrée, le pointillé animé mène à la suivante ; les agents actifs sont posés sous l'étape où ils travaillent ; les losanges sont les débats Claude/GPT (vert accord, orange désaccord, gris Claude seul).</figcaption>
+    </figure>
+  </section>
+
+  <section class="two">
+    <div class="panel" aria-labelledby="h-mod">
+      <div class="head"><h2 id="h-mod">Modèles</h2><span class="muted">part des tokens et appels</span></div>
+      <div class="mshare" id="mshare"><p class="empty">-</p></div>
+    </div>
+    <div class="panel" aria-labelledby="h-deb">
+      <div class="head"><h2 id="h-deb">Débats Claude / GPT</h2><span class="muted num" id="deb-n"></span></div>
+      <div class="scroll"><table id="debates"></table></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-plans">
+    <div class="head"><h2 id="h-plans">Plans</h2><span class="muted num" id="plans-sum"></span></div>
+    <div class="ms" id="plans"><p class="empty">Les chantiers apparaîtront ici après la première collecte (docs/superpowers/plans ou docs/dashboard/plans.json).</p></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-now">
+    <div class="head"><h2 id="h-now">En cours en détail</h2><span class="muted" id="now-sum"></span></div>
+    <div class="now" id="now"><p class="empty">Le détail du travail en cours apparaîtra ici dès la prochaine mise à jour de l'orchestrateur.</p></div>
+    <div class="lists" id="now-lists"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-you">
+    <div class="head"><h2 id="h-you">À faire de ton côté</h2><span class="muted">tiré de docs/STATUS.md et des notes de l'orchestrateur</span></div>
+    <div class="you" id="you"><p class="empty">-</p></div>
+  </section>
+
+
+  <section class="two">
+    <div class="panel" aria-labelledby="h-model">
+      <div class="head"><h2 id="h-model">Tokens par modèle</h2><span class="muted num" id="tok-total"></span></div>
+      <div id="models"><p class="empty">-</p></div>
+      <div class="legend">
+        <span><i style="background:var(--s-out)"></i>Sortie</span>
+        <span><i style="background:var(--s-in)"></i>Entrée + écriture du cache</span>
+        <span><i style="background:var(--s-cache)"></i>Lecture du cache</span>
+      </div>
+      <div class="scroll" style="margin-top:14px"><table id="models-t"></table></div>
+    </div>
+    <div class="panel" aria-labelledby="h-plat">
+      <div class="head"><h2 id="h-plat">Par plateforme</h2><span class="muted">où tourne le travail</span></div>
+      <div class="plat" id="plat"></div>
+      <h3 style="font-size:18px;margin:18px 0 6px">Tokens par jour</h3>
+      <div id="days"><p class="empty">-</p></div>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="panel" aria-labelledby="h-roles">
+      <div class="head"><h2 id="h-roles">Tokens par rôle</h2><span class="muted">session principale et chaque type de sous-agent</span></div>
+      <div class="scroll"><table id="roles"></table></div>
+    </div>
+    <div class="panel" aria-labelledby="h-wt">
+      <div class="head"><h2 id="h-wt">Worktrees</h2><span class="muted" id="wt-n"></span></div>
+      <div class="scroll"><table id="wt"></table></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-agents">
+    <div class="head"><h2 id="h-agents">Agents</h2><span class="muted" id="ag-n"></span></div>
+    <div class="scroll"><table id="agents"></table></div>
+  </section>
+
+  <section class="two">
+    <div class="panel" aria-labelledby="h-ci">
+      <div class="head"><h2 id="h-ci">CI GitHub Actions</h2><span class="muted num" id="ci-n"></span></div>
+      <div class="scroll"><table id="ci"></table></div>
+    </div>
+    <div class="panel" aria-labelledby="h-pr">
+      <div class="head"><h2 id="h-pr">Pull requests</h2><span class="muted" id="pr-n"></span></div>
+      <div class="scroll"><table id="prs"></table></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-steps">
+    <div class="head"><h2 id="h-steps">Étapes clés</h2><span class="muted">PR fusionnées et étapes notées, les plus récentes d'abord</span></div>
+    <div class="timeline" id="tl"><p class="empty">Aucune étape enregistrée pour l'instant.</p></div>
+  </section>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const nf = (n, d = 0) => (n ?? 0).toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const big = (n) => n >= 1e9 ? nf(n / 1e9, 2) + ' Md' : n >= 1e6 ? nf(n / 1e6, 1) + ' M' : n >= 1e3 ? nf(n / 1e3, 0) + ' k' : nf(n);
+const when = (s) => s ? new Date(s).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-';
+const model = (m) => { const x = /(opus|sonnet|haiku|fable)-(\d+)(?:-(\d{1,2}))?(?!\d)/.exec(m || ''); return x ? x[1][0].toUpperCase() + x[1].slice(1) + ' ' + x[2] + (x[3] ? '.' + x[3] : '') : (m || '-'); };
+const ST = { success: ['ok', 'succès'], failure: ['bad', 'échec'], cancelled: ['idle', 'annulé'], skipped: ['idle', 'ignoré'], in_progress: ['', 'en cours'], queued: ['warn', 'en file'],
+  actif: ['', 'actif'], 'terminé': ['idle', 'terminé'], MERGED: ['ok', 'fusionnée'], OPEN: ['', 'ouverte'], CLOSED: ['idle', 'fermée'],
+  merged: ['ok', 'fusionné'], in_progress_plan: ['', 'en cours'], planned: ['warn', 'planifié'], not_started: ['idle', 'pas commencé'] };
+const pill = (s) => { const [c, l] = ST[s] || ['idle', s || '-']; return `<span class="pill ${c}">${esc(l)}</span>`; };
+const head = (cols) => '<tr>' + cols.map((c) => c.startsWith('>') ? `<th class="r">${c.slice(1)}</th>` : `<th>${c}</th>`).join('') + '</tr>';
+const empty = (n, t) => `<tr><td colspan="${n}" class="empty">${t}</td></tr>`;
+
+let board = null, events = [];
+
+function render(b) {
+  board = b;
+  renderNow();
+  const T = b.tokens, claude = T.byModel || [], models = [...claude, ...((b.deepseek || {}).byModel || []).map((m) => ({ ...m, ds: true }))], agents = b.agents || [], prs = b.prs || [], runs = b.jobs || [], ci = b.ci || { runs: 0, minutes: 0 };
+  const merged = prs.filter((p) => p.state === 'MERGED'), open = prs.filter((p) => p.state === 'OPEN');
+  const active = agents.filter((a) => a.status === 'actif');
+
+  $('updated').textContent = 'Mis à jour le ' + new Date(b.updatedAt).toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+  const repository = b.repo || '';  // « propriétaire/dépôt » fourni par le collecteur : aucun lien de dépôt en dur
+  const prUrl = (n) => `https://github.com/${repository}/pull/${n}`;
+  $('title').textContent = repository ? `${repository.split('/')[1]} - suivi du projet` : 'Suivi du projet';
+  document.title = $('title').textContent;
+  $('summary').textContent = `${repository || 'Dépôt local'} - ${merged.length} PR fusionnée(s), ${open.length} ouverte(s).`;
+
+  // plans
+  const plansDone = b.plans.filter((p) => p.status === 'merged').length;
+  const tasksDone = b.plans.reduce((s, p) => s + (p.tasksDone || 0), 0), tasksAll = b.plans.reduce((s, p) => s + (p.tasksTotal || 0), 0);
+  $('plans-sum').textContent = `${plansDone} plan(s) fusionné(s) sur ${b.plans.length} - ${tasksDone} tâches sur ${tasksAll}`;
+  $('plans').innerHTML = b.plans.map((p) => {
+    const pct = p.tasksTotal ? 100 * p.tasksDone / p.tasksTotal : 0;
+    const cls = p.status === 'merged' ? 'done' : p.status === 'in_progress' ? 'active' : '';
+    const url = (prs.find((x) => x.number === p.pr) || {}).url || (p.pr && repository ? prUrl(p.pr) : null);
+    const pr = p.pr && url ? `<a href="${esc(url)}">PR #${p.pr}</a>` : p.pr ? `PR #${p.pr}` : '<span class="faint">pas de PR</span>';
+    return `<div class="card ${cls}"><div class="top"><span>${esc(p.id)}</span><span><b>${p.tasksDone ?? 0}</b> / ${p.tasksTotal || '?'}</span></div>
+      <h3>${esc(p.title)}</h3><div class="bar" role="img" aria-label="${Math.round(pct)} % des tâches"><i style="width:${pct}%;background:var(--ok)"></i></div>
+      <div class="running" style="margin:0">${pill(p.status === 'in_progress' ? 'in_progress_plan' : p.status)}${pr}</div></div>`;
+  }).join('');
+
+  // tuiles
+  const tok = T.total, out = models.reduce((s, m) => s + (m.output || 0), 0);
+  const vs = T.claudeVsDeepseek || { claude: 0, deepseek: 0, deepseekShare: 0 };
+  const part = 100 * (vs.deepseekShare || 0);
+  $('stats').innerHTML = [
+    ['Plans', plansDone, `/ ${b.plans.length}`, `${tasksDone} tâches terminées sur ${tasksAll}`],
+    ['Pull requests', merged.length, 'fusionnées', `${open.length} ouverte(s) - ${prs.length} au total`],
+    ['Agents', active.length, 'en cours', `${agents.length} lancés`],
+    ['Part DeepSeek', nf(part, 1) + ' %', 'des jetons', `${big(vs.deepseek)} sur ${big((vs.claude || 0) + (vs.deepseek || 0))} - Claude ${big(vs.claude)}`],
+    ['Tokens Claude Code', big(tok), '', `${big(T.withoutCacheReads)} hors lectures du cache - ${big(out)} en sortie`],
+    ['CI GitHub Actions', nf(Math.round(ci.minutes)), 'min', `sur les ${ci.runs} derniers runs`],
+  ].map(([k, v, u, s]) => `<div class="stat"><div class="k">${k}</div><div class="v">${v} <small>${u}</small></div><div class="s">${esc(s)}</div></div>`).join('');
+
+  // tokens par modèle
+  const maxM = Math.max(1, ...models.map((m) => m.total));
+  $('tok-total').textContent = big(tok) + ' tokens - ' + nf(T.requests) + ' réponses';
+  $('models').innerHTML = models.map((m) => {
+    const seg = m.ds ? `<i style="width:${(100 * m.total / maxM).toFixed(2)}%;background:var(--violet)" title="total : ${nf(m.total)} (répartition non journalisée par le MCP)"></i>` : [['var(--s-out)', m.output, 'sortie'], ['var(--s-in)', m.input + m.cacheWrite, 'entrée + écriture du cache'], ['var(--s-cache)', m.cacheRead, 'lecture du cache']]
+      .filter((x) => x[1] > 0).map(([c, v, l]) => `<i style="width:${(100 * v / maxM).toFixed(2)}%;background:${c}" title="${l} : ${nf(v)}"></i>`).join('');
+    return `<div class="mrow"><span class="name">${esc(model(m.name))}</span><div class="bar">${seg}</div><span class="num" style="text-align:right">${big(m.total)}</span></div>`;
+  }).join('') || '<p class="empty">-</p>';
+  const cell = (m, k) => `<td class="r">${m.ds ? '-' : big(m[k])}</td>`;
+  $('models-t').innerHTML = head(['Modèle', '>Réponses', '>Entrée', '>Écriture cache', '>Lecture cache', '>Sortie', '>Total']) +
+    (models.map((m) => `<tr><td>${esc(model(m.name))}${m.ds ? ' <span class="faint">- jobs, tous projets</span>' : ''}</td><td class="r">${nf(m.responses)}</td>${cell(m, 'input')}${cell(m, 'cacheWrite')}${cell(m, 'cacheRead')}${cell(m, 'output')}<td class="r">${big(m.total)}</td></tr>`).join('') || empty(7, 'Aucune réponse.'));
+
+  // plateformes
+  const ds = b.deepseek || {}, plats = T.byPlatform || [];
+  const cli = plats.find((x) => x.name === 'Claude Code CLI') || { total: 0 };
+  const others = plats.filter((x) => x !== cli && x.total).map((x) => `+ ${big(x.total)} ${x.name}`);
+  $('plat').innerHTML = [
+    ['Claude Code - Mac', big(cli.total), ['tokens en CLI - ' + (claude.map((m) => model(m.name)).join(', ') || 'aucun modèle'), ...others].join(' - ')],
+    ['DeepSeek - API', ds.available ? big(ds.tokens) : '-', ds.available ? `tokens - ${nf(ds.delegations)} délégation(s), tous projets (MCP deepseek)` : 'MCP non configuré'],
+    ['GitHub Actions', nf(Math.round(ci.minutes)), `minutes de CI - ${nf(ci.runs)} run(s)`],
+  ].map(([k, v, s]) => `<div><span class="k">${k}</span><b>${v}</b><span class="s">${esc(s)}</span></div>`).join('');
+  drawDays();
+
+  // rôles
+  $('roles').innerHTML = head(['Rôle', '>Total', '>Hors lectures du cache', 'Part']) +
+    ((T.byRole || []).map((r) => `<tr><td>${esc(r.name)}</td><td class="r">${big(r.total)}</td><td class="r">${big(r.withoutCacheReads)}</td><td style="width:30%"><div class="bar"><i style="width:${(100 * r.total / Math.max(1, tok)).toFixed(1)}%;background:var(--s-out)"></i></div></td></tr>`).join('') || empty(4, '-'));
+
+  // worktrees
+  const wts = b.worktrees || [];
+  $('wt-n').textContent = `${wts.length} copie(s) de travail - ${wts.filter((w) => w.dirty).length} modifiée(s)`;
+  $('wt').innerHTML = head(['Branche', 'HEAD', 'État']) +
+    (wts.map((w) => `<tr><td class="mono">${esc(w.branch || '(détachée)')}</td><td class="mono faint">${esc(w.head)}</td><td>${w.dirty ? '<span class="pill warn">modifié</span>' : '<span class="pill ok">propre</span>'}</td></tr>`).join('') || empty(3, 'Aucun worktree.'));
+
+  // agents
+  $('ag-n').textContent = `${agents.length} lancés - ${big(agents.reduce((s, a) => s + a.tokens, 0))} tokens en sous-agents`;
+  $('agents').innerHTML = head(['État', 'Type', 'Tâche', 'Dernier outil', 'Modèle', 'Début', '>Tokens']) +
+    (agents.slice(0, 30).map((a) => `<tr><td>${pill(a.status)}</td><td class="mono">${esc(a.type)}</td><td>${esc(a.task || '-')}</td><td class="mono">${esc(a.lastTool || '-')}</td><td>${esc((a.model || []).map(model).join(', '))}</td><td class="num">${when(a.startedAt)}</td><td class="r">${big(a.tokens)}</td></tr>`).join('') || empty(7, 'Aucun agent.'));
+
+  // CI
+  $('ci-n').textContent = `${nf(ci.minutes, 1)} min sur ${ci.runs} run(s)`;
+  $('ci').innerHTML = head(['État', 'Exécution', 'Branche', 'Début', '>Durée']) +
+    (runs.map((r) => `<tr><td>${pill(r.status === 'completed' ? r.conclusion : r.status)}</td><td><a href="${esc(r.url)}">${esc(r.displayTitle)}</a></td><td class="mono">${esc(r.headBranch)}</td><td class="num">${when(r.createdAt)}</td><td class="r">${nf(r.minutes, 1)} min</td></tr>`).join('') || empty(5, 'Aucun run de CI pour l\'instant.'));
+
+  // PR
+  $('pr-n').textContent = `${prs.length} au total`;
+  $('prs').innerHTML = head(['#', 'Titre', 'État']) +
+    (prs.slice(0, 20).map((p) => `<tr><td class="mono"><a href="${esc(p.url)}">#${p.number}</a></td><td>${esc(p.title)}</td><td>${pill(p.state)}</td></tr>`).join('') || empty(3, 'Aucune PR.'));
+
+  renderTimeline();
+  renderMap(b);
+  renderModels(b);
+}
+
+// Carte du cycle : 8 phases (PHASES du collecteur), agents actifs posés sur leur phase, débats aux portes.
+const PHASES = [['idea', 'Idée'], ['spec', 'Spec'], ['plan', 'Plan'], ['tests', 'Tests'], ['build', 'Code'], ['review', 'Revue'], ['merge', 'Fusion'], ['push', 'Push']];
+const GATES = ['spec', 'plan', 'review'];
+function phaseOf(type, current) {
+  const t = String(type || '').replace(/^ai-team:/, '');
+  if (t === 'product-owner') return 'idea';
+  if (t === 'test-writer') return 'tests';
+  if (/^(front-|back-)/.test(t) || t === 'doc-writer') return 'build';
+  if (['reviewer', 'security', 'qa', 'challenger'].includes(t)) return 'review';
+  return current || 'build';
+}
+function renderMap(b) {
+  const NS = 'http://www.w3.org/2000/svg', svg = $('map');
+  const el = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); (parent || svg).appendChild(e); return e; };
+  const txt = (s, attrs, parent) => { const e = el('text', attrs, parent); e.textContent = s; return e; };
+  svg.replaceChildren();
+  const defs = el('defs', {}); const mk = el('marker', { id: 'arr', viewBox: '0 0 10 10', refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: 'auto-start-reverse' }, defs);
+  el('path', { d: 'M0,0 L10,5 L0,10 z', fill: 'currentColor', opacity: .6 }, mk);
+  const cur = b.cycle && b.cycle.phase, ci = PHASES.findIndex(([k]) => k === cur);
+  const W = 104, H = 56, gap = 18, x0 = 14, y = 40, xs = PHASES.map((_, i) => x0 + i * (W + gap));
+  PHASES.forEach(([k], i) => {
+    if (i === 0) return;
+    const cls = ci >= 0 && i <= ci ? 'edge done' : (i === ci + 1 && ci >= 0 ? 'edge next' : 'edge');
+    el('line', { x1: xs[i - 1] + W, y1: y + H / 2, x2: xs[i] - 2, y2: y + H / 2, class: cls, 'marker-end': 'url(#arr)' });
+  });
+  PHASES.forEach(([k, label], i) => {
+    const g = el('g', { class: 'node' + (i === ci ? ' now' : ci >= 0 && i < ci ? ' done' : '') });
+    el('rect', { x: xs[i], y, width: W, height: H, rx: 10 }, g);
+    txt(label, { x: xs[i] + W / 2, y: y + (k === 'review' ? 24 : 32), 'text-anchor': 'middle' }, g);
+    if (k === 'review') txt('Claude + GPT', { x: xs[i] + W / 2, y: y + 42, 'text-anchor': 'middle', class: 'sub' }, g);
+    if (i === ci && b.cycle.task) txt(b.cycle.task.slice(0, 16), { x: xs[i] + W / 2, y: y - 10, 'text-anchor': 'middle', class: 'sub' }, g);
+  });
+  // débat le plus récent posé sur la porte courante (ou la dernière franchie)
+  const last = ((b.debates || {}).recent || [])[0];
+  if (last) {
+    const gate = GATES.includes(cur) ? cur : [...GATES].reverse().find((gk) => PHASES.findIndex(([k]) => k === gk) <= ci) || 'spec';
+    const gx = xs[PHASES.findIndex(([k]) => k === gate)] + W / 2, gy = y + H + 22;
+    const g = el('g', { class: 'gate ' + last.result });
+    el('polygon', { points: `${gx},${gy - 14} ${gx + 14},${gy} ${gx},${gy + 14} ${gx - 14},${gy}` }, g);
+    txt({ agreement: 'OK', disagreement: '!', claudeOnly: 'C', unknown: '?' }[last.result] || '?', { x: gx, y: gy + 4, 'text-anchor': 'middle' }, g);
+  }
+  // agents actifs sous leur phase
+  const active = (b.agents || []).filter((a) => a.status === 'actif'), slots = {};
+  active.forEach((a) => {
+    const p = phaseOf(a.type, cur), i = PHASES.findIndex(([k]) => k === p), n = (slots[p] = (slots[p] || 0) + 1) - 1;
+    if (n > 3) return;
+    const CW = 210, ax = Math.min(Math.max(xs[i] + W / 2 - CW / 2, 4), 1000 - CW - 4), ay = y + H + 48 + n * 44;
+    const g = el('g', { class: 'agent' });
+    if (n === 0) el('line', { x1: xs[i] + W / 2, y1: y + H, x2: xs[i] + W / 2, y2: ay, class: 'edge', opacity: .5 }, g);
+    el('rect', { x: ax, y: ay, width: CW, height: 36, rx: 8 }, g);
+    el('circle', { cx: ax + 12, cy: ay + 12, r: 4, class: 'dot' }, g);
+    txt(String(a.type || 'agent').replace(/^ai-team:/, '').slice(0, 16) + ' - ' + (a.model || []).map(model).join('/').slice(0, 10), { x: ax + 22, y: ay + 16 }, g);
+    txt(((a.lastTool ? a.lastTool + ' - ' : '') + (a.task || '')).slice(0, 28), { x: ax + 12, y: ay + 30, class: 'sub' }, g);
+  });
+  $('map-sum').textContent = cur ? `étape : ${PHASES[ci][1]}${b.cycle.task ? ' - ' + b.cycle.task : ''} - ${active.length} agent(s) actif(s)` : `aucun /cycle en cours - ${active.length} agent(s) actif(s)`;
+}
+function renderModels(b) {
+  const m = b.models || {}, rows = [['Claude', (m.claude || {}).tokens || 0], ['GPT', (m.gpt || {}).tokens || 0], ['DeepSeek', (m.deepseek || {}).tokens || 0], ['Grok', (m.grok || {}).tokens || 0]];
+  const tot = rows.reduce((s, r) => s + r[1], 0) || 1;
+  const calls = (k) => m[k] && m[k].calls !== undefined ? ` - ${m[k].calls} appel(s)${m[k].failed ? `, ${m[k].failed} en échec` : ''}` : '';
+  $('mshare').innerHTML = rows.map(([n, v]) => `<div class="row"><span>${n}</span><span class="bar"><i style="width:${(100 * v / tot).toFixed(1)}%"></i></span><span class="num muted">${big(v)}${calls(n.toLowerCase())}</span></div>`).join('');
+  const d = b.debates || { total: 0, recent: [] }, R = { agreement: ['ok', 'accord'], disagreement: ['warn', 'désaccord'], claudeOnly: ['idle', 'Claude seul'], unknown: ['idle', 'en cours'] };
+  $('deb-n').textContent = `${d.total} au total - ${d.agreement || 0} accord(s), ${d.disagreement || 0} désaccord(s)`;
+  $('debates').innerHTML = head(['Date', 'Sujet', 'Résultat']) + (d.recent.map((x) => `<tr><td class="num">${esc(x.date || '-')}</td><td>${esc(x.topic)}</td><td><span class="pill ${R[x.result][0]}">${R[x.result][1]}</span></td></tr>`).join('') || empty(3, 'Aucun débat pour l\'instant.'));
+}
+
+// Histogramme des 14 derniers jours (jours sans activité à zéro), dernier jour mis en avant.
+function drawDays() {
+  const el = $('days'), raw = (board && board.tokens.byDay) || [];
+  if (!raw.length) { el.innerHTML = '<p class="empty">Pas encore de tokens datés.</p>'; return; }
+  // la plage finit aujourd'hui (date UTC de la collecte), comme les jours du collecteur
+  const map = Object.fromEntries(raw.map((d) => [d.day, d.total])), last = new Date(String(board.updatedAt).slice(0, 10) + 'T00:00:00Z'), days = [];
+  for (let i = 13; i >= 0; i--) { const d = new Date(last - i * 864e5).toISOString().slice(0, 10); days.push([d, map[d] || 0]); }
+  const W = Math.max(280, el.clientWidth || 520), H = 170, pl = 58, pr = 16, pb = 22, pt = 18, ph = H - pb - pt;
+  const max = Math.max(...days.map((d) => d[1]), 1), step = Math.pow(10, Math.floor(Math.log10(max)));
+  const top = [1, 2, 2.5, 5, 10].map((k) => k * step).find((v) => v >= max) || 10 * step;
+  const y = (v) => pt + ph - ph * v / top, bw = (W - pl - pr) / days.length, every = Math.ceil(days.length / Math.floor((W - pl) / 44));
+  let s = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Tokens par jour sur les 14 derniers jours">`;
+  for (let i = 0; i <= 2; i++) { const v = top * i / 2; s += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}"${i ? '' : ' class="base"'}/><text x="${pl - 6}" y="${y(v) + 4}" text-anchor="end">${big(v)}</text>`; }
+  days.forEach(([d, v], i) => {
+    const w = Math.min(bw * 0.64, 36), x = pl + i * bw + (bw - w) / 2, h = ph * v / top, yt = y(v), r = Math.min(4, h, w / 2), today = i === days.length - 1;
+    const bar = h > 0 ? `<path d="M${x} ${y(0)}V${yt + r}Q${x} ${yt} ${x + r} ${yt}H${x + w - r}Q${x + w} ${yt} ${x + w} ${yt + r}V${y(0)}Z" fill="var(${today ? '--s-today' : '--s-day'})"/>` : '';
+    s += `<g><title>${d.slice(8)}/${d.slice(5, 7)} : ${nf(v)} tokens</title>${bar}<rect class="hit" x="${pl + i * bw}" y="${pt}" width="${bw}" height="${ph}"/></g>`;
+    if (today && v) s += `<text class="val" x="${x + w / 2}" y="${yt - 5}" text-anchor="middle">${big(v)}</text>`;
+    if ((days.length - 1 - i) % every === 0) s += `<text x="${x + w / 2}" y="${H - 6}" text-anchor="middle">${d.slice(8)}/${d.slice(5, 7)}</text>`;
+  });
+  el.innerHTML = s + '</svg>';
+}
+addEventListener('resize', () => board && drawDays());
+
+function renderTimeline() {
+  const items = [
+    ...((board && board.prs) || []).filter((p) => p.state === 'MERGED' && p.mergedAt).map((p) => ({ at: p.mergedAt, html: `<span class="mono faint">#${p.number}</span> ${esc(p.title)}` })),
+    ...events.map((e) => ({ at: e.at, html: `<strong>${esc(e.label)}</strong>${e.detail ? `<div class="muted">${esc(e.detail)}</div>` : ''}` })),
+  ].sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 40);
+  $('tl').innerHTML = items.map((e) => `<div class="ev"><time datetime="${esc(e.at)}">${when(e.at)}</time><div>${e.html}</div></div>`).join('') || '<p class="empty">Aucune étape enregistrée pour l\'instant.</p>';
+}
+
+// Détail du travail en cours : tâches et agents actifs calculés par le collecteur (board/latest),
+// complétés par les notes de l'orchestrateur (board/current : étape, exécutant, note, listes).
+const TS = { running: ['', 'en cours'], review: ['warn', 'en revue'], waiting: ['idle', 'à faire'], blocked: ['bad', 'bloqué'], done: ['ok', 'terminé'] };
+// états publiés par le collecteur (collect.py) → états d'affichage
+const AUTO = { in_progress: 'running', review: 'review', todo: 'waiting', done: 'done' };
+let manual = {};
+function renderNow() {
+  const cur = (board && board.current) || { tasks: [] }, notes = Object.fromEntries((manual.items || []).map((i) => [i.id, i]));
+  const tasks = cur.tasks || [], doneN = tasks.filter((t) => t.state === 'done').length;
+  const items = tasks.filter((t) => t.state !== 'done').map((t) => {
+    const n = notes[t.id] || {};
+    return { ...n, id: t.id, title: t.title, status: n.status && n.status !== 'done' ? n.status : AUTO[t.state] };
+  });
+  $('now-sum').textContent = [cur.plan, tasks.length && `${doneN}/${tasks.length} tâches terminées`, manual.focus, manual.updatedAt && 'notes du ' + when(manual.updatedAt)].filter(Boolean).join(' - ');
+  $('now').innerHTML = items.map((i) => {
+    const [cls, lab] = TS[i.status] || ['idle', i.status || '-'];
+    const meta = [i.step && `Étape <b>${esc(i.step)}</b>`, i.executor && `Par <b>${esc(i.executor)}</b>`, i.pr && `PR <b>${esc(i.pr)}</b>`,
+      i.branch && `<span class="mono">${esc(i.branch)}</span>`, i.since && `depuis ${when(i.since)}`].filter(Boolean).map((m) => `<span>${m}</span>`).join('');
+    return `<article class="task ${esc(i.status)}"><div class="id">${esc(i.id)}</div><div class="t">${esc(i.title)}</div><span class="pill ${cls}">${esc(lab)}</span>`
+      + (meta ? `<div class="meta">${meta}</div>` : '') + (i.note ? `<div class="note">${esc(i.note)}</div>` : '') + '</article>';
+  }).join('') || '<p class="empty">Aucun plan en cours.</p>';
+  // agents[].description n'est plus publié : la liste affiche « type - modèle »
+  const agents = ((board && board.agents) || []).filter((a) => a.status === 'actif')
+    .map((a) => [(a.type || 'agent'), (a.model || []).map(model).join(', ')].filter(Boolean).join(' - '));
+  const list = (title, xs, tag) => xs && xs.length ? `<div><h3>${title}</h3><${tag}>${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</${tag}></div>` : '';
+  $('now-lists').innerHTML = list('Agents actifs', agents, 'ul') + list('Ensuite', manual.next, 'ol') + list('Points d\'attention', manual.watch, 'ul') + list('Décisions récentes', manual.rulings, 'ul');
+  const you = [...((board && board.todo) || []), ...(manual.you || [])];
+  $('you').innerHTML = you.length ? '<ul>' + you.map((x) => `<li>${esc(x)}</li>`).join('') + '</ul>' : '<p class="empty">Rien pour l\'instant.</p>';
+  const al = [...((board && board.alerts) || []), ...(manual.alerts || []).map((t) => ({ level: 'warn', text: t }))];
+  $('alerts').hidden = !al.length;
+  $('alerts').innerHTML = al.map((x) => `<div class="alert ${x.level === 'bad' ? 'bad' : 'warn'}"><span class="pill ${x.level === 'bad' ? 'bad' : 'warn'}">${x.level === 'bad' ? 'à traiter' : 'à surveiller'}</span> ${esc(x.text)}</div>`).join('');
+}
+
+(async () => {
+  const db = await window.claude?.use?.('db');
+  if (!db) { $('updated').textContent = 'Données indisponibles dans cette vue (connexion claude.ai requise).'; return; }
+  db.doc('board/latest').onSnapshot((s) => { if (s.exists) render(s.data()); }, () => { $('updated').textContent = 'Lecture des données impossible.'; });
+  db.doc('board/current').onSnapshot((s) => { manual = s.exists ? s.data() : {}; renderNow(); });
+  db.collection('events').orderBy('at', 'desc').limit(40).onSnapshot((q) => { events = q.docs.map((d) => d.data()); renderTimeline(); });
+})();
+</script>
