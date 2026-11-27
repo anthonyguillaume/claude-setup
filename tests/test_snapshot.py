@@ -52,6 +52,19 @@ class SnapshotTest(unittest.TestCase):
         for s in secrets:
             self.assertFalse((out / s).exists(), s)
 
+    def test_snapshot_excludes_files_inside_secret_dirs(self):
+        repo = make_repo({"secrets/db.yml": "x", "config/credentials/aws.json": "x", "ok.py": "1"})
+        out = Path(snapshot.make_snapshot(str(repo)))
+        self.assertFalse((out / "secrets/db.yml").exists())
+        self.assertFalse((out / "config/credentials/aws.json").exists())
+        self.assertTrue((out / "ok.py").exists())
+
+    def test_snapshot_from_subdir_uses_repo_root_rules(self):
+        repo = make_repo({".aiignore": "/app/private.md\n", "app/private.md": "x", "app/ok.md": "x"})
+        out = Path(snapshot.make_snapshot(str(repo / "app")))
+        self.assertFalse((out / "app/private.md").exists())
+        self.assertTrue((out / "app/ok.md").exists())
+
     def test_snapshot_aiignore_uses_gitignore_semantics(self):
         repo = make_repo({".aiignore": "*.sql\n/top.md\n", "db/dump.sql": "x",
                           "top.md": "x", "docs/top.md": "x"})

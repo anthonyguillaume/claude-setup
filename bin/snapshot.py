@@ -31,16 +31,23 @@ def _git_files(src: Path, *args: str) -> set[str]:
 
 
 def _is_secret(rel: str) -> bool:
-    name = rel.rsplit("/", 1)[-1].lower()
-    return any(fnmatch.fnmatchcase(name, p) for p in EXCLUDE_PATTERNS)
+    # every path component, so secrets/ and credentials/ dirs are excluded too
+    return any(fnmatch.fnmatchcase(part, p)
+               for part in rel.lower().split("/") for p in EXCLUDE_PATTERNS)
 
 
 def make_snapshot(project_dir: str) -> str:
-    src = Path(project_dir).resolve()
+    r = subprocess.run(["git", "-C", str(Path(project_dir).resolve()), "rev-parse",
+                        "--show-toplevel"], capture_output=True, text=True)
+    if r.returncode != 0:
+        raise NotGitRepo(f"{project_dir} is not a git repository")
+    # always snapshot from the repo root so .aiignore rules are anchored correctly
+    src = Path(r.stdout.strip())
     files = _git_files(src)
-    if (src / ".aiignore").is_file():
+    aiignore = src / ".aiignore"
+    if aiignore.is_file():
         # git applies .aiignore with real gitignore semantics
-        files -= _git_files(src, "--cached", "--ignored", "--exclude-from=.aiignore")
+        files -= _git_files(src, "--cached", "--ignored", f"--exclude-from={aiignore}")
     dest = Path(tempfile.mkdtemp(prefix="ai-snapshot-"))
     for rel in files:
         path = src / rel
