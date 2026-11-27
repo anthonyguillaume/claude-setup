@@ -18,6 +18,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import snapshot  # noqa: E402
+import usage_log  # noqa: E402
+
+# filled by main(), written to the usage log on exit (counters only)
+STATS = {"project": None, "tokens": None}
 
 
 def fail(code: int, reason: str):
@@ -42,6 +46,7 @@ def main():
         fail(2, "--diff needs --project")
     if a.project:
         try:
+            STATS["project"] = snapshot._scope(a.project)[0].as_posix()
             workdir = snapshot.make_snapshot(a.project)
             if a.diff:
                 Path(workdir, "BRANCH.diff").write_text(snapshot.safe_diff(a.project, a.diff))
@@ -93,6 +98,9 @@ def main():
             continue
         if ev.get("type") == "thread.started":
             session = ev.get("thread_id")
+        u = ev.get("usage") if isinstance(ev, dict) else None
+        if isinstance(u, dict):
+            STATS["tokens"] = (STATS["tokens"] or 0) + u.get("input_tokens", 0) + u.get("output_tokens", 0)
     answer = out.read_text() if out.exists() else ""
     if not answer.strip():
         fail(3, "empty answer")
@@ -101,4 +109,13 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import time
+    t0 = time.monotonic()
+    code = 0
+    try:
+        main()
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else 1
+        raise
+    finally:
+        usage_log.record("gpt", STATS["project"], code == 0, time.monotonic() - t0, STATS["tokens"])

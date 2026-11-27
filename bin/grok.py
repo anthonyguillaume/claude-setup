@@ -11,6 +11,12 @@ import os
 import sys
 import urllib.error
 import urllib.request
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import usage_log  # noqa: E402
+
+TOKENS = {"n": None}
 
 # shortcut: default model name set from memory, check docs.x.ai if xAI renames it
 DEFAULT_MODEL = "grok-4"
@@ -42,6 +48,8 @@ def main():
         fail(3, f"HTTP {e.code}")
     except (urllib.error.URLError, TimeoutError) as e:
         fail(3, f"network error {type(e).__name__}")
+    if isinstance(data, dict) and isinstance(data.get("usage"), dict):
+        TOKENS["n"] = data["usage"].get("total_tokens")
     try:
         print(data["choices"][0]["message"]["content"])
     except (KeyError, IndexError, TypeError):
@@ -49,4 +57,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import time
+    t0 = time.monotonic()
+    code = 0
+    try:
+        main()
+    except SystemExit as e:
+        code = e.code if isinstance(e.code, int) else 1
+        raise
+    finally:
+        # Grok never gets project files: no project in its counters
+        usage_log.record("grok", None, code == 0, time.monotonic() - t0, TOKENS["n"])

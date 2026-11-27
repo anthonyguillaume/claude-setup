@@ -36,7 +36,8 @@ class GptTest(unittest.TestCase):
         fake.chmod(0o755)
         self.log = self.bindir / "log.json"
         self.env = {**os.environ, "PATH": f"{self.bindir}:/usr/bin:/bin",
-                    "FAKE_LOG": str(self.log), "FAKE_ANSWER": "réponse"}
+                    "FAKE_LOG": str(self.log), "FAKE_ANSWER": "réponse",
+                    "AI_TEAM_USAGE_LOG": str(self.bindir / "usage.log")}
 
     def run_gpt(self, *args, prompt="question", **env):
         return subprocess.run([sys.executable, str(GPT), *args], input=prompt,

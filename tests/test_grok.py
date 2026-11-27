@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -22,7 +23,8 @@ class FakeXai(BaseHTTPRequestHandler):
         self.send_response(FakeXai.status)
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        payload = {"choices": [{"message": {"content": "salut"}}]} if FakeXai.status == 200 \
+        payload = {"choices": [{"message": {"content": "salut"}}], "usage": {"total_tokens": 7}} \
+            if FakeXai.status == 200 \
             else {"error": "rate limited"}
         self.wfile.write(json.dumps(payload).encode())
 
@@ -36,6 +38,7 @@ class GrokTest(unittest.TestCase):
         cls.server = HTTPServer(("127.0.0.1", 0), FakeXai)
         threading.Thread(target=cls.server.serve_forever, daemon=True).start()
         cls.base = f"http://127.0.0.1:{cls.server.server_port}/v1"
+        cls.usage = tempfile.mkdtemp(prefix="usage-") + "/usage.log"
 
     @classmethod
     def tearDownClass(cls):
@@ -45,7 +48,7 @@ class GrokTest(unittest.TestCase):
         base = {k: v for k, v in os.environ.items() if k != "XAI_API_KEY"}
         return subprocess.run([sys.executable, str(GROK)], input="bonjour",
                               capture_output=True, text=True,
-                              env={**base, "XAI_BASE_URL": self.base, **env})
+                              env={**base, "XAI_BASE_URL": self.base, "AI_TEAM_USAGE_LOG": self.usage, **env})
 
     def test_grok_returns_answer(self):
         FakeXai.status = 200
@@ -55,6 +58,9 @@ class GrokTest(unittest.TestCase):
         self.assertEqual(FakeXai.seen["path"], "/v1/chat/completions")
         self.assertEqual(FakeXai.seen["auth"], "Bearer test-key")
         self.assertEqual(FakeXai.seen["body"]["messages"][-1]["content"], "bonjour")
+        last = json.loads(open(self.usage).read().splitlines()[-1])
+        self.assertEqual((last["model"], last["ok"], last["tokens"]), ("grok", True, 7))
+        self.assertNotIn("bonjour", open(self.usage).read())
 
     def test_grok_missing_key(self):
         r = self.run_grok({})
