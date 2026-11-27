@@ -44,6 +44,22 @@ class SnapshotTest(unittest.TestCase):
             self.assertFalse((out / s).exists(), s)
         self.assertTrue((out / "ok.py").exists())
 
+    def test_snapshot_excludes_secrets_case_insensitive_and_more_types(self):
+        secrets = [".ENV", "Prod.PEM", "cert.p12", "store.pfx", ".npmrc", ".netrc",
+                   ".pypirc", "app.keystore", "infra/terraform.tfstate", "vault.kdbx"]
+        repo = make_repo({**{s: "SECRET" for s in secrets}, "ok.py": "1"})
+        out = Path(snapshot.make_snapshot(str(repo)))
+        for s in secrets:
+            self.assertFalse((out / s).exists(), s)
+
+    def test_snapshot_aiignore_uses_gitignore_semantics(self):
+        repo = make_repo({".aiignore": "*.sql\n/top.md\n", "db/dump.sql": "x",
+                          "top.md": "x", "docs/top.md": "x"})
+        out = Path(snapshot.make_snapshot(str(repo)))
+        self.assertFalse((out / "db/dump.sql").exists())
+        self.assertFalse((out / "top.md").exists())
+        self.assertTrue((out / "docs/top.md").exists())
+
     def test_snapshot_respects_aiignore(self):
         repo = make_repo({".aiignore": "private/\n", "private/x.md": "p", "pub.md": "p"})
         out = Path(snapshot.make_snapshot(str(repo)))
