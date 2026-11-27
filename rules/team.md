@@ -64,7 +64,7 @@ Si aucun skill ne couvre un besoin récurrent : proposer `find-skills` à l'util
 
 ## 6. Commandes
 
-- `/debate <question>`, `/verify`, `/grok <prompt>`, `/cycle <idée>`. Si la forme courte ne répond pas, utiliser `/ai-team:<commande>`.
+- `/debate <question>`, `/verify`, `/grok <prompt>`, `/cycle <idée>`, `/dashboard [étape]` (tableau de suivi du projet, un artifact privé par projet). Si la forme courte ne répond pas, utiliser `/ai-team:<commande>`.
 - Noms de commandes, skills et agents en anglais.
 
 ## 7. Écriture
