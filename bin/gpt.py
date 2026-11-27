@@ -57,9 +57,15 @@ def main():
     workdir = str(Path(workdir).resolve())
     # "--sandbox read-only" still lets commands read the whole disk (~/.ssh, other
     # projects): this permission profile only allows reading the snapshot
-    # codex's sandbox helper must read its own binary (e.g. /opt/homebrew/bin -> Cellar)
+    # codex's sandbox helper must read its binary's directory (a file-only grant fails);
+    # never grant a directory that is or contains the home directory
     bins = {str(Path(codex).parent.resolve()), str(Path(codex).resolve().parent)}
-    readable = ",".join(f'"{d}"="read"' for d in sorted(bins | {workdir}))
+    home = Path.home().resolve()
+    for d in bins:
+        if home == Path(d) or Path(d) in home.parents:
+            fail(2, f"codex is installed in {d}, which contains the home directory")
+    # json.dumps gives a valid TOML basic string (quotes and backslashes escaped)
+    readable = ",".join(f"{json.dumps(d)}=\"read\"" for d in sorted(bins | {workdir}))
     perms = ["-c", 'default_permissions="ai-team-readonly"',
              "-c", 'permissions.ai-team-readonly.filesystem='
                    f'{{":root"="deny",":minimal"="read",{readable}}}']

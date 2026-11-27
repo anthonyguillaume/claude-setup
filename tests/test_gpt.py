@@ -106,6 +106,11 @@ class GptTest(unittest.TestCase):
         self.assertIn("abc", args)
         self.assertIn('":root"="deny"', " ".join(args))
 
+    def test_gpt_refuses_codex_dir_that_contains_home(self):
+        r = self.run_gpt(HOME=str(self.bindir / "user"))
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("GPT_UNAVAILABLE: codex is installed in", r.stderr)
+
     def test_gpt_missing_codex(self):
         r = self.run_gpt(PATH="/usr/bin:/bin")
         self.assertEqual(r.returncode, 2)
