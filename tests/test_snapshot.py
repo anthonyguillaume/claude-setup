@@ -65,6 +65,18 @@ class SnapshotTest(unittest.TestCase):
         self.assertFalse((out / "app/private.md").exists())
         self.assertTrue((out / "app/ok.md").exists())
 
+    def test_snapshot_of_subdir_excludes_siblings(self):
+        repo = make_repo({"app/a.py": "1", "other/b.py": "2"})
+        out = Path(snapshot.make_snapshot(str(repo / "app")))
+        self.assertTrue((out / "app/a.py").exists())
+        self.assertFalse((out / "other/b.py").exists())
+
+    def test_snapshot_applies_nested_aiignore(self):
+        repo = make_repo({"app/.aiignore": "hidden.md\n", "app/hidden.md": "x", "app/ok.md": "x"})
+        out = Path(snapshot.make_snapshot(str(repo)))
+        self.assertFalse((out / "app/hidden.md").exists())
+        self.assertTrue((out / "app/ok.md").exists())
+
     def test_snapshot_aiignore_uses_gitignore_semantics(self):
         repo = make_repo({".aiignore": "*.sql\n/top.md\n", "db/dump.sql": "x",
                           "top.md": "x", "docs/top.md": "x"})

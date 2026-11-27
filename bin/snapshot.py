@@ -37,17 +37,19 @@ def _is_secret(rel: str) -> bool:
 
 
 def make_snapshot(project_dir: str) -> str:
-    r = subprocess.run(["git", "-C", str(Path(project_dir).resolve()), "rev-parse",
-                        "--show-toplevel"], capture_output=True, text=True)
+    target = Path(project_dir).resolve()
+    r = subprocess.run(["git", "-C", str(target), "rev-parse", "--show-toplevel"],
+                       capture_output=True, text=True)
     if r.returncode != 0:
         raise NotGitRepo(f"{project_dir} is not a git repository")
-    # always snapshot from the repo root so .aiignore rules are anchored correctly
-    src = Path(r.stdout.strip())
-    files = _git_files(src)
-    aiignore = src / ".aiignore"
-    if aiignore.is_file():
-        # git applies .aiignore with real gitignore semantics
-        files -= _git_files(src, "--cached", "--ignored", f"--exclude-from={aiignore}")
+    # paths stay relative to the repo root so .aiignore rules anchor correctly,
+    # but only files under the requested directory are listed
+    src = Path(r.stdout.strip()).resolve()
+    scope = str(target.relative_to(src)) or "."
+    files = _git_files(src, "--", scope)
+    # git applies every .aiignore (root and nested) with gitignore semantics
+    files -= _git_files(src, "--cached", "--ignored", "--exclude-per-directory=.aiignore",
+                        "--", scope)
     dest = Path(tempfile.mkdtemp(prefix="ai-snapshot-"))
     for rel in files:
         path = src / rel
