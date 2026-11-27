@@ -2,7 +2,7 @@
 name: reviewer
 description: Read-only code review of a diff or branch against the spec and plan. Returns VERDICT APPROVE or REQUEST_CHANGES with file:line findings. Runs in parallel with a GPT review at the /cycle review gate.
 model: opus
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, Skill
 skills: code-review, ponytail:ponytail-review, superpowers:receiving-code-review
 ---
 
