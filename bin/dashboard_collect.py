@@ -328,6 +328,48 @@ def todo(texte):
     return [re.sub(r"\*\*|`", "", i) for i in items]
 
 
+def models(usage_texte, root, claude_tokens, deepseek_tokens):
+    """Appels GPT (ceux de ce projet) et Grok (tous projets : Grok ne reçoit aucun fichier) depuis usage.log."""
+    out = {"claude": {"tokens": claude_tokens}, "deepseek": {"tokens": deepseek_tokens},
+           "gpt": {"calls": 0, "failed": 0, "tokens": 0}, "grok": {"calls": 0, "failed": 0, "tokens": 0}}
+    for line in (usage_texte or "").splitlines():
+        try:
+            row = json.loads(line)
+        except ValueError:
+            continue
+        if not isinstance(row, dict) or row.get("model") not in ("gpt", "grok"):
+            continue
+        if row["model"] == "gpt" and row.get("project") != root:
+            continue
+        m = out[row["model"]]
+        m["calls"] += 1
+        m["failed"] += 0 if row.get("ok") else 1
+        m["tokens"] += row.get("tokens") or 0
+    return out
+
+
+def debates(fichiers):
+    """Compteurs des débats : seule la première ligne RESULT: et le nom de fichier sont lus, jamais le corps."""
+    out = {"total": 0, "agreement": 0, "disagreement": 0, "claudeOnly": 0, "unknown": 0, "recent": []}
+    for f in sorted(fichiers or [], key=lambda f: f.get("name", ""), reverse=True):
+        premiere = (f.get("text") or "").split("\n", 1)[0].strip()
+        if premiere.startswith("RESULT: AGREEMENT (CLAUDE ONLY"):
+            res = "claudeOnly"
+        elif premiere == "RESULT: AGREEMENT":
+            res = "agreement"
+        elif premiere == "RESULT: DISAGREEMENT":
+            res = "disagreement"
+        else:
+            res = "unknown"
+        out["total"] += 1
+        out[res] += 1
+        m = re.match(r"(\d{4}-\d{2}-\d{2})-(.+)\.md$", f.get("name", ""))
+        if len(out["recent"]) < 10:
+            out["recent"].append({"date": m.group(1) if m else None,
+                                  "topic": m.group(2) if m else f.get("name"), "result": res})
+    return out
+
+
 def build_board(sources):
     """Sources lues → document JSON du tableau. Aucune E/S : ne lit que le dict `sources` fourni.
     Le résultat ne contient que des compteurs, des titres et des états : jamais le contenu des échanges (DASH-05)."""
@@ -362,6 +404,8 @@ def build_board(sources):
                          sources.get("journal_git_status") or "", sources.get("deepseek_log") or ""),
         "todo": sources.get("todo") or [],
         "deepseek": ds,
+        "models": models(sources.get("usage_ai_team"), sources.get("root"), tokens_total, ds.get("tokens") or 0),
+        "debates": debates(sources.get("debates")),
         "tokens": {
             "total": tokens_total,
             "withoutCacheReads": tokens_total - cache_reads,
@@ -471,7 +515,8 @@ def discover_plans(repo):
     return plans
 
 
-def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=None, git=None, deepseek_log_path=None):
+def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=None, git=None, deepseek_log_path=None,
+                 ai_team_usage_path=None):
     """Lit TOUTES les sources (journalisation Claude Code, registres, plans, STATUS.md, git, gh, journaux DeepSeek)
     et rend un dict lisible par build_board().
     `repo` = racine du dépôt en local ; `repo_gh` = « propriétaire/dépôt » pour gh (None : pas de suivi GitHub) ;
@@ -495,6 +540,11 @@ def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=Non
     heads, total = taches_plan(repo, plans)
     return {
         "repo_gh": repo_gh,
+        "root": repo,
+        "usage_ai_team": lire(os.path.expanduser(ai_team_usage_path or os.environ.get(
+            "AI_TEAM_USAGE_LOG", "~/.ai-team/usage.log"))),
+        "debates": [{"name": os.path.basename(f), "text": lire(f).split("\n", 1)[0]}
+                    for f in glob.glob(os.path.join(repo, ".superpowers/debates/*.md"))],
         "journal_git_status": sh([git, "status", "--porcelain"], repo),
         "transcriptions": [transcription(p) for p in fichiers_jsonl(projet)],
         "usage_texte": lire(usage_path) if usage_path else "",

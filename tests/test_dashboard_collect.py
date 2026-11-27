@@ -57,7 +57,8 @@ def _load_sources(repo, projet=None, **kwargs):
         os.path.join(repo, "pas-d-usage.log"),
         deepseek_log_path=os.path.join(repo, "pas-de-server.log"),
         gh=os.path.join(repo, "gh-introuvable"), git=os.path.join(repo, "git-introuvable"),
-        **{"repo_gh": "exemple/depot", **kwargs})
+        **{"repo_gh": "exemple/depot", "ai_team_usage_path": os.path.join(repo, "pas-d-usage-ai-team.log"),
+           **kwargs})
 
 
 def _sources(repo, **extra):
@@ -280,3 +281,45 @@ class DiscoverPlansTest(unittest.TestCase):
         self.assertEqual((p["id"], p["title"], p["tasksTotal"], p["status"]),
                          ("2026-01-01-x", "Titre X", 3, "todo"))
         self.assertEqual(p["planFile"], "docs/superpowers/plans/2026-01-01-x.md")
+
+
+class ModelsAndDebatesTest(unittest.TestCase):
+    USAGE = "\n".join([
+        json.dumps({"at": "2026-11-27T10:00:00+00:00", "model": "gpt", "project": "/p", "ok": True, "seconds": 3, "tokens": 100}),
+        json.dumps({"at": "2026-11-27T10:01:00+00:00", "model": "gpt", "project": "/p", "ok": False, "seconds": 1, "tokens": None}),
+        json.dumps({"at": "2026-11-27T10:02:00+00:00", "model": "gpt", "project": "/autre", "ok": True, "seconds": 1, "tokens": 999}),
+        json.dumps({"at": "2026-11-27T10:03:00+00:00", "model": "grok", "project": None, "ok": True, "seconds": 1, "tokens": 7}),
+    ])
+
+    def board(self, **sources):
+        return collect.build_board({"repo_gh": "a/b", "root": "/p", **sources})
+
+    def test_models_counts_by_project(self):
+        m = self.board(usage_ai_team=self.USAGE)["models"]
+        self.assertEqual(m["gpt"], {"calls": 2, "failed": 1, "tokens": 100})
+        self.assertEqual(m["grok"], {"calls": 1, "failed": 0, "tokens": 7})
+        self.assertIn("tokens", m["claude"])
+        self.assertIn("tokens", m["deepseek"])
+
+    def test_usage_log_bad_lines_ignored(self):
+        m = self.board(usage_ai_team="not json\n[1,2]\n" + self.USAGE)["models"]
+        self.assertEqual(m["gpt"]["calls"], 2)
+        self.assertEqual(self.board()["models"]["gpt"], {"calls": 0, "failed": 0, "tokens": 0})
+
+    def test_debates_counted(self):
+        debates = [
+            {"name": "2026-11-20-db-choice.md", "text": "RESULT: AGREEMENT\nbody"},
+            {"name": "2026-11-21-api.md", "text": "RESULT: DISAGREEMENT\nbody"},
+            {"name": "2026-11-22-cache.md", "text": "RESULT: AGREEMENT (CLAUDE ONLY - GPT unavailable: timeout)\n"},
+        ]
+        d = self.board(debates=debates)["debates"]
+        self.assertEqual((d["total"], d["agreement"], d["disagreement"], d["claudeOnly"], d["unknown"]), (3, 1, 1, 1, 0))
+        self.assertEqual(d["recent"][0], {"date": "2026-11-22", "topic": "cache", "result": "claudeOnly"})
+
+    def test_debate_without_result_is_unknown(self):
+        d = self.board(debates=[{"name": "2026-11-23-wip.md", "text": "# en cours"}])["debates"]
+        self.assertEqual(d["unknown"], 1)
+
+    def test_debates_never_include_content(self):
+        b = self.board(debates=[{"name": "2026-11-20-x.md", "text": "RESULT: AGREEMENT\nSECRET-BODY"}])
+        self.assertNotIn("SECRET-BODY", json.dumps(b))
