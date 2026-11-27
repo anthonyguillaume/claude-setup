@@ -1,0 +1,17 @@
+# marketplace <name> <github repo>   (official marketplace is built in)
+marketplace ui-ux-pro-max-skill nextlevelbuilder/ui-ux-pro-max-skill
+marketplace ponytail DietrichGebert/ponytail
+marketplace handoff-marketplace willseltzer/claude-handoff
+marketplace context-mode mksglu/context-mode
+# plugin <plugin@marketplace>
+plugin superpowers@claude-plugins-official
+plugin frontend-design@claude-plugins-official
+plugin code-review@claude-plugins-official
+plugin context7@claude-plugins-official
+plugin security-guidance@claude-plugins-official
+plugin playwright@claude-plugins-official
+plugin clangd-lsp@claude-plugins-official
+plugin swift-lsp@claude-plugins-official
+plugin ui-ux-pro-max@ui-ux-pro-max-skill
+plugin ponytail@ponytail
+plugin context-mode@context-mode

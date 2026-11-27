@@ -1,0 +1,21 @@
+# <skill> <source>   source "unknown" = to find; skills are copied to ~/.claude/skills or linked from ~/.agents/skills
+# Origins of ~/.agents/skills links not read yet (needs approval to read ~/.agents).
+archify unknown
+design-taste-frontend unknown
+emil-design-eng unknown
+find-skills unknown
+impeccable unknown
+review-animations unknown
+differential-review unknown
+documentation-writer unknown
+dotnet-webapi unknown
+epic-hypothesis unknown
+github-actions-hardening unknown
+graphify unknown
+optimizing-ef-core-queries unknown
+owasp-security unknown
+postgresql-optimization unknown
+prioritization-advisor unknown
+roadmap-planning unknown
+vercel-react-best-practices unknown
+workshop-facilitation unknown
