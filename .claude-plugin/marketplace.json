@@ -1,0 +1,14 @@
+{
+  "name": "ai-team",
+  "owner": {
+    "name": "Anthony Guillaume"
+  },
+  "plugins": [
+    {
+      "name": "ai-team",
+      "source": "./",
+      "description": "Multi-model agent team: global agents, /debate, /verify, /grok, /cycle"
+    }
+  ],
+  "description": "Personal multi-model agent team"
+}
