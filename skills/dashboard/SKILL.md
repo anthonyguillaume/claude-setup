@@ -21,7 +21,7 @@ Page: `<this skill's base directory>/../../dashboard/dashboard.html`.
      Write `{"artifact": "<url>", "pageVersion": "<ai-team plugin version>"}` to `<root>/docs/dashboard/config.json` and tell the user to commit it (the same link then works from any machine).
    - **Present**: do not republish. Exception: the ai-team plugin version (`.claude-plugin/plugin.json`) is newer than `pageVersion`: republish the page to the same `url` (read it first, omit `capabilities` to keep the stored rules), then update `pageVersion`.
 5. **Write the numbers** with `ArtifactData` (load it with ToolSearch if needed), one `batch` on the artifact url:
-   - `set board/latest` from `board.json` (`file_path`);
+   - `set board/latest` from `board.json` (`file_path`), with `if_version` = the version returned by a `get` of `board/latest` just before (omit it only when the document does not exist yet);
    - when a topic was given (`/dashboard <topic>`, or the step name when called by /cycle): `set events/<YYYYMMDD-HHMMSS>-<topic-slug>` with `{"at": "<ISO time>", "title": "<topic>", "kind": "step"}`.
 6. **First publish only**: one `ArtifactData list` of `board` and of `events` to check the writes landed; say in one line what you checked.
 7. **Open** the artifact (Artifact `open`) unless called by /cycle.
