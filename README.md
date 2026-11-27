@@ -25,7 +25,7 @@ Si la forme courte ne répond pas : `/ai-team:debate`, etc.
 ## Nouvelle machine
 
 ```bash
-git clone git@github.com:anthonyguillaume/claude-setup.git ~/Dev/claude-setup
+git clone https://github.com/anthonyguillaume/claude-setup.git ~/Dev/claude-setup
 cd ~/Dev/claude-setup
 ./bootstrap.sh --check   # état, n'installe rien
 ./bootstrap.sh           # propose chaque installation manquante, [y/N] à chaque fois
