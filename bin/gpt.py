@@ -57,9 +57,12 @@ def main():
     workdir = str(Path(workdir).resolve())
     # "--sandbox read-only" still lets commands read the whole disk (~/.ssh, other
     # projects): this permission profile only allows reading the snapshot
+    # codex's sandbox helper must read its own binary (e.g. /opt/homebrew/bin -> Cellar)
+    bins = {str(Path(codex).parent.resolve()), str(Path(codex).resolve().parent)}
+    readable = ",".join(f'"{d}"="read"' for d in sorted(bins | {workdir}))
     perms = ["-c", 'default_permissions="ai-team-readonly"',
              "-c", 'permissions.ai-team-readonly.filesystem='
-                   f'{{":root"="deny",":minimal"="read","{workdir}"="read"}}']
+                   f'{{":root"="deny",":minimal"="read",{readable}}}']
     # no user config (MCP servers, hooks run outside the sandbox), minimal env (no DB passwords)
     isolation = ["--ignore-user-config", "-c", 'shell_environment_policy.inherit="core"']
     # prompt on stdin ("-"): no argv size limit, not visible in ps, no "-" option confusion

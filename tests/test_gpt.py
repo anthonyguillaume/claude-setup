@@ -64,6 +64,7 @@ class GptTest(unittest.TestCase):
         self.assertIn('default_permissions="ai-team-readonly"', joined)
         self.assertIn('":root"="deny"', joined)
         self.assertRegex(joined, r'"[^"]*ai-snapshot-[^"]*"="read"')
+        self.assertIn(f'"{self.bindir.resolve()}"="read"', joined)
         self.assertNotIn(str(repo.resolve()), joined + log["cwd"])
 
     def test_gpt_isolates_user_config_and_environment(self):
