@@ -58,8 +58,10 @@ class GptTest(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         log = self.logged()
         joined = " ".join(log["args"])
-        self.assertIn("read-only", joined)
-        self.assertIn("ai-snapshot-", joined)
+        self.assertNotIn("--sandbox", log["args"])
+        self.assertIn('default_permissions="ai-team-readonly"', joined)
+        self.assertIn('":root"="deny"', joined)
+        self.assertRegex(joined, r'"[^"]*ai-snapshot-[^"]*"="read"')
         self.assertNotIn(str(repo.resolve()), joined + log["cwd"])
 
     def test_gpt_resume_passes_session(self):
@@ -68,7 +70,7 @@ class GptTest(unittest.TestCase):
         args = self.logged()["args"]
         self.assertIn("resume", args)
         self.assertIn("abc", args)
-        self.assertIn('sandbox_mode="read-only"', " ".join(args))
+        self.assertIn('":root"="deny"', " ".join(args))
 
     def test_gpt_missing_codex(self):
         r = self.run_gpt(PATH="/usr/bin:/bin")

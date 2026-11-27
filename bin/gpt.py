@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Ask GPT through the Codex CLI, read-only, on a filtered copy of the project.
+"""Ask GPT through the Codex CLI on a filtered copy of the project.
+
+Codex commands may only read that copy: no writes, no other file on the disk.
 
 Usage: gpt.py [--project DIR] [--resume SESSION_ID] [--timeout 600] < prompt.txt
 stdout: GPT's last answer. stderr last line: "SESSION: <id>".
@@ -47,13 +49,17 @@ def main():
     for d in (workdir, outdir):
         atexit.register(shutil.rmtree, d, True)
     out = Path(outdir) / "last.txt"
+    workdir = str(Path(workdir).resolve())
+    # "--sandbox read-only" still lets commands read the whole disk (~/.ssh, other
+    # projects): this permission profile only allows reading the snapshot
+    perms = ["-c", 'default_permissions="ai-team-readonly"',
+             "-c", 'permissions.ai-team-readonly.filesystem='
+                   f'{{":root"="deny",":minimal"="read","{workdir}"="read"}}']
+    common = [*perms, "--skip-git-repo-check", "--json", "-o", str(out)]
     if a.resume:
-        # resume has no --sandbox/--cd flags: sandbox via config, cwd via process
-        cmd = [codex, "exec", "resume", "-c", 'sandbox_mode="read-only"',
-               "--skip-git-repo-check", "--json", "-o", str(out), a.resume, prompt]
+        cmd = [codex, "exec", "resume", *common, a.resume, prompt]
     else:
-        cmd = [codex, "exec", "--sandbox", "read-only", "-C", workdir,
-               "--skip-git-repo-check", "--json", "-o", str(out), prompt]
+        cmd = [codex, "exec", "-C", workdir, *common, prompt]
     try:
         r = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, timeout=a.timeout)
     except subprocess.TimeoutExpired:
