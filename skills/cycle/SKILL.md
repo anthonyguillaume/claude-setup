@@ -13,6 +13,7 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
 
 - If the session model is not Fable, say so in one line and suggest `/model fable`. Do not block.
 - Check the GPT bridge: `codex login status`. Not logged in: say the cycle will run with Claude only until the user runs `! codex login`.
+- Phase file: at every phase change write `<project>/.superpowers/cycle.json` as `{"phase": "<phase>", "task": "<short label, e.g. Task 3>", "updatedAt": "<ISO time>"}` with phase one of `idea`, `spec`, `plan`, `tests`, `build`, `review`, `merge`, `push`. The dashboard reads it.
 - Journal: `<project>/.superpowers/progress.md` (git-ignored). One line per automatic decision: `Décision : ... - coût si faux : ...`. Note every `GPT unavailable`.
 
 ## Steps

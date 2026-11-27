@@ -122,7 +122,7 @@ class CollectTest(unittest.TestCase):
         json.dumps(board)  # sérialisable tel quel sur stdout
 
     def test_no_message_content_leaks(self):
-        """Seuls des compteurs sont lus : ni le texte des transcriptions ni la description d'un agent n'apparaissent."""
+        """Seuls des compteurs et le libellé court des agents sont lus : jamais le texte des transcriptions."""
         with tempfile.TemporaryDirectory() as repo:
             projet = os.path.join(repo, "projet")
             os.makedirs(projet)
@@ -138,9 +138,9 @@ class CollectTest(unittest.TestCase):
                                     "content": [{"type": "text", "text": "SECRET-CONTENU réponse"}],
                                     "usage": {"input_tokens": 10, "output_tokens": 5, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}},
                     }) + "\n")
-            # sous-agent : sa fiche porte une description libre, qui ne doit jamais être publiée
+            # sous-agent : le libellé court de sa fiche est affiché (choix ai-team), jamais le contenu des messages
             with open(os.path.join(projet, "agent-42.meta.json"), "w", encoding="utf-8") as f:
-                json.dump({"agentType": "general-purpose", "description": "SECRET-CONTENU mission"}, f)
+                json.dump({"agentType": "general-purpose", "description": "Revue de la tache 3"}, f)
             with open(os.path.join(projet, "agent-42.jsonl"), "w", encoding="utf-8") as f:
                 f.write(json.dumps({
                     "type": "assistant", "timestamp": "2026-10-17T09:00:02Z", "requestId": "r-agent",
@@ -155,6 +155,7 @@ class CollectTest(unittest.TestCase):
         self.assertEqual(board["tokens"]["total"], 30)  # 2 réponses × (10 entrée + 5 sortie)
         self.assertEqual([a["type"] for a in board["agents"]], ["general-purpose"])
         self.assertNotIn("description", board["agents"][0])
+        self.assertEqual(board["agents"][0]["task"], "Revue de la tache 3")
 
     def test_most_advanced_state_wins_across_ledgers(self):
         """Registre versionné ET registre SDD fusionnés : l'état de rang maximal gagne, dans les deux sens."""
@@ -323,3 +324,52 @@ class ModelsAndDebatesTest(unittest.TestCase):
     def test_debates_never_include_content(self):
         b = self.board(debates=[{"name": "2026-11-20-x.md", "text": "RESULT: AGREEMENT\nSECRET-BODY"}])
         self.assertNotIn("SECRET-BODY", json.dumps(b))
+
+
+class LiveAgentsAndCycleTest(unittest.TestCase):
+    def _agent(self, d, meta, lines):
+        path = os.path.join(d, "agent-x.jsonl")
+        with open(path, "w") as f:
+            for l in lines:
+                f.write(json.dumps(l) + "\n")
+        with open(path[:-6] + ".meta.json", "w") as f:
+            json.dump(meta, f)
+        return collect.agents([collect.transcription(path)])[0]
+
+    LINE = {"type": "assistant", "timestamp": "2026-11-27T10:00:00Z", "requestId": "r1",
+            "message": {"id": "m1", "model": "claude-sonnet-5-5", "usage": {"input_tokens": 1, "output_tokens": 1},
+                        "content": [{"type": "tool_use", "name": "Edit", "input": {"new_string": "SECRET-ARG"}}]}}
+
+    def test_agent_task_label_truncated(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = self._agent(d, {"agentType": "ai-team:front-react", "description": "x" * 80}, [self.LINE])
+        self.assertEqual(len(a["task"]), 60)
+
+    def test_agent_last_tool_name_only(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = self._agent(d, {"agentType": "ai-team:reviewer", "description": "Review"}, [self.LINE])
+        self.assertEqual(a["lastTool"], "Edit")
+        self.assertNotIn("SECRET-ARG", json.dumps(a))
+
+    def test_agent_status_from_meta_finished(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = self._agent(d, {"agentType": "qa", "finished": True}, [self.LINE])
+            b = self._agent(d, {"agentType": "qa", "finished": False}, [self.LINE])
+        self.assertEqual((a["status"], b["status"]), ("terminé", "actif"))
+
+    def test_cycle_phase_read(self):
+        with tempfile.TemporaryDirectory() as repo:
+            os.makedirs(os.path.join(repo, ".superpowers"))
+            with open(os.path.join(repo, ".superpowers/cycle.json"), "w") as f:
+                json.dump({"phase": "review", "task": "Task 3", "updatedAt": "2026-11-27T10:00:00Z"}, f)
+            board = collect.build_board(_load_sources(repo))
+        self.assertEqual(board["cycle"]["phase"], "review")
+        self.assertEqual(board["cycle"]["task"], "Task 3")
+
+    def test_cycle_phase_invalid_is_none(self):
+        for content in ('{"phase": "dance"}', "not json"):
+            with tempfile.TemporaryDirectory() as repo:
+                os.makedirs(os.path.join(repo, ".superpowers"))
+                with open(os.path.join(repo, ".superpowers/cycle.json"), "w") as f:
+                    f.write(content)
+                self.assertIsNone(collect.build_board(_load_sources(repo))["cycle"])

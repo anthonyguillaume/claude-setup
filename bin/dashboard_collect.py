@@ -278,8 +278,11 @@ def agents(transcriptions):
             "model": sorted({r["model"] for r in rows}) or ([t["model"]] if t.get("model") else []),
             "tokens": sum(total(r) for r in rows),
             "responses": len(rows),
-            # shortcut: « actif » = transcription écrite il y a moins de 2 min, faute de statut officiel ; lire ce statut dès que Claude Code l'expose.
-            "status": "actif" if t.get("mtime") and time.time() - t["mtime"] < 120 else "terminé",
+            # fiche .meta.json « finished » quand elle existe ; sinon shortcut : actif = écrit il y a moins de 2 min
+            "status": ("terminé" if t["finished"] else "actif") if t.get("finished") is not None else (
+                "actif" if t.get("mtime") and time.time() - t["mtime"] < 120 else "terminé"),
+            "task": t.get("task"),
+            "lastTool": t.get("lastTool"),
             "startedAt": min((r["at"] for r in rows if r["at"]), default=None),
         })
     out.sort(key=lambda a: a["startedAt"] or "", reverse=True)
@@ -370,6 +373,20 @@ def debates(fichiers):
     return out
 
 
+PHASES = ["idea", "spec", "plan", "tests", "build", "review", "merge", "push"]
+
+
+def cycle(texte):
+    """Étape du cycle écrite par /cycle dans .superpowers/cycle.json ; None si absente ou invalide."""
+    try:
+        c = json.loads(texte or "")
+    except ValueError:
+        return None
+    if not isinstance(c, dict) or c.get("phase") not in PHASES:
+        return None
+    return {"phase": c["phase"], "task": str(c.get("task") or "")[:80] or None, "updatedAt": c.get("updatedAt")}
+
+
 def build_board(sources):
     """Sources lues → document JSON du tableau. Aucune E/S : ne lit que le dict `sources` fourni.
     Le résultat ne contient que des compteurs, des titres et des états : jamais le contenu des échanges (DASH-05)."""
@@ -406,6 +423,7 @@ def build_board(sources):
         "deepseek": ds,
         "models": models(sources.get("usage_ai_team"), sources.get("root"), tokens_total, ds.get("tokens") or 0),
         "debates": debates(sources.get("debates")),
+        "cycle": cycle(sources.get("cycle")),
         "tokens": {
             "total": tokens_total,
             "withoutCacheReads": tokens_total - cache_reads,
@@ -433,23 +451,46 @@ def fichiers_jsonl(projet):
     return sorted(set(glob.glob(os.path.join(projet, "**", "*.jsonl"), recursive=True))) if projet else []
 
 
+def dernier_outil(path):
+    """Nom du dernier outil appelé dans la transcription : le nom seulement, jamais ses arguments."""
+    nom = None
+    try:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    d = json.loads(line)
+                except ValueError:
+                    continue
+                contenu = (d.get("message") or {}).get("content") if isinstance(d, dict) else None
+                if isinstance(contenu, list):
+                    for bloc in contenu:
+                        if isinstance(bloc, dict) and bloc.get("type") == "tool_use" and bloc.get("name"):
+                            nom = bloc["name"]
+    except OSError:
+        pass
+    return nom
+
+
 def transcription(path):
-    """Une transcription lue : type d'agent et modèle (fiche .meta.json, jamais sa description), date d'écriture,
-    compteurs. Seuls model, usage et timestamp sont retenus, jamais le contenu des messages (DASH-05)."""
-    agent_type, modele = None, None
+    """Une transcription lue : type d'agent, modèle, libellé court de la tâche (fiche .meta.json, tronqué à
+    60 caractères), état terminé, dernier outil, compteurs. Jamais le contenu des messages ni des outils."""
+    agent_type, modele, libelle, termine = None, None, None, None
     meta_path = path[: -len(".jsonl")] + ".meta.json"
     if os.path.exists(meta_path):
         try:
             with open(meta_path, encoding="utf-8") as f:
                 meta = json.load(f) or {}
             agent_type, modele = meta.get("agentType"), meta.get("model")
+            libelle = (meta.get("description") or "")[:60] or None
+            termine = meta.get("finished") if isinstance(meta.get("finished"), bool) else None
         except (OSError, ValueError, AttributeError):
-            agent_type, modele = None, None
+            agent_type, modele, libelle, termine = None, None, None, None
     try:
         mtime = os.path.getmtime(path)
     except OSError:
         mtime = None
-    return {"agentType": agent_type, "model": modele, "mtime": mtime,
+    return {"agentType": agent_type, "model": modele, "mtime": mtime, "task": libelle, "finished": termine,
+            "lastTool": dernier_outil(path),
             "isAgent": os.path.basename(path).startswith("agent-"), "rows": usage_rows(path, agent_type)}
 
 
@@ -541,6 +582,7 @@ def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=Non
     return {
         "repo_gh": repo_gh,
         "root": repo,
+        "cycle": lire(os.path.join(repo, ".superpowers/cycle.json")),
         "usage_ai_team": lire(os.path.expanduser(ai_team_usage_path or os.environ.get(
             "AI_TEAM_USAGE_LOG", "~/.ai-team/usage.log"))),
         "debates": [{"name": os.path.basename(f), "text": lire(f).split("\n", 1)[0]}
