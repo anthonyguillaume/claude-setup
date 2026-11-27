@@ -1,21 +1,21 @@
-# <skill> <source>   source "unknown" = to find; skills are copied to ~/.claude/skills or linked from ~/.agents/skills
-# Origins of ~/.agents/skills links not read yet (needs approval to read ~/.agents).
-archify unknown
-design-taste-frontend unknown
-emil-design-eng unknown
-find-skills unknown
-impeccable unknown
-review-animations unknown
-differential-review unknown
-documentation-writer unknown
-dotnet-webapi unknown
-epic-hypothesis unknown
-github-actions-hardening unknown
-graphify unknown
-optimizing-ef-core-queries unknown
-owasp-security unknown
-postgresql-optimization unknown
-prioritization-advisor unknown
-roadmap-planning unknown
-vercel-react-best-practices unknown
-workshop-facilitation unknown
+# <skill> <source>   source = github repo (npx skills add) or "vendored" (copied from vendor/skills)
+# github sources from ~/.agents/.skill-lock.json, reinstall with: npx skills add <source>
+archify tt-a1i/archify
+design-taste-frontend leonxlnx/taste-skill
+emil-design-eng emilkowalski/skills
+find-skills vercel-labs/skills
+impeccable pbakaus/impeccable
+review-animations emilkowalski/skills
+differential-review vendored
+documentation-writer vendored
+dotnet-webapi vendored
+epic-hypothesis vendored
+github-actions-hardening vendored
+graphify vendored
+optimizing-ef-core-queries vendored
+owasp-security vendored
+postgresql-optimization vendored
+prioritization-advisor vendored
+roadmap-planning vendored
+vercel-react-best-practices vendored
+workshop-facilitation vendored

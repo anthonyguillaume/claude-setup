@@ -26,6 +26,14 @@ class BootstrapCheckTest(unittest.TestCase):
         self.assertIn("OK XAI_API_KEY", r.stdout)
         self.assertNotIn("sk-very-secret", r.stdout + r.stderr)
 
+    def test_check_detects_codex_login_printed_on_stderr(self):
+        home = tempfile.mkdtemp(prefix="home-")
+        bindir = Path(tempfile.mkdtemp(prefix="bin-"))
+        (bindir / "codex").write_text("#!/bin/sh\necho 'Logged in using ChatGPT' >&2\n")
+        (bindir / "codex").chmod(0o755)
+        r = self.run_check({"HOME": home, "PATH": f"{bindir}:/usr/bin:/bin"})
+        self.assertIn("OK codex login", r.stdout)
+
     def test_check_installs_nothing(self):
         home = tempfile.mkdtemp(prefix="home-")
         self.run_check({"HOME": home, "PATH": "/usr/bin:/bin"})

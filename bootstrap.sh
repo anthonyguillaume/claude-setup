@@ -29,7 +29,8 @@ check_tool claude "curl -fsSL https://claude.ai/install.sh | bash"
 check_tool codex "brew install codex"
 
 if have codex; then
-  if codex login status 2>/dev/null | grep -qi "logged in" && ! codex login status 2>/dev/null | grep -qi "not logged"; then
+  status="$(codex login status 2>&1)"  # codex prints the status on stderr
+  if grep -qi "logged in" <<<"$status" && ! grep -qi "not logged" <<<"$status"; then
     ok "codex login"
   else
     miss "codex login"; ask "Log in to Codex with the ChatGPT account" "codex login"
@@ -72,7 +73,10 @@ else miss "CLAUDE.md imports team rules"
   ask "Add the team rules import to ~/.claude/CLAUDE.md" "mkdir -p '$HOME/.claude' && printf '\n# ai-team\n%s\n' '$IMPORT_LINE' >> '$HOME/.claude/CLAUDE.md'"; fi
 
 while read -r skill source; do
-  [ "$source" = "unknown" ] && echo "INFO skill $skill: source unknown, copy it by hand from the old machine"
+  if [ -e "$HOME/.claude/skills/$skill" ]; then ok "skill $skill"
+  elif [ "$source" = "vendored" ]; then
+    miss "skill $skill"; ask "Copy skill $skill from vendor/skills" "mkdir -p '$HOME/.claude/skills' && cp -R '$REPO/vendor/skills/$skill' '$HOME/.claude/skills/'"
+  else miss "skill $skill"; ask "Install skill $skill from $source" "npx skills add $source"; fi
 done < <(grep -v '^#' "$REPO/manifest/third-party-skills.txt")
 
 exit "$MISSING"
