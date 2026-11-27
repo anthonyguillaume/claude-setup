@@ -5,6 +5,7 @@ Only git-tracked files, never secrets, never symlinks.
 Usage: snapshot.py <project_dir>  -> prints the snapshot path.
 """
 import fnmatch
+import os
 import shutil
 import subprocess
 import sys
@@ -20,12 +21,17 @@ EXCLUDE_PATTERNS = [
 ]
 
 
+# file names like "*" or ".e*" must never act as globs in git pathspecs
+GIT_ENV = {**os.environ, "GIT_LITERAL_PATHSPECS": "1"}
+
+
 class NotGitRepo(Exception):
     pass
 
 
 def _git_files(src: Path, *args: str) -> set[str]:
-    r = subprocess.run(["git", "-C", str(src), "ls-files", "-z", *args], capture_output=True)
+    r = subprocess.run(["git", "-C", str(src), "ls-files", "-z", *args], capture_output=True,
+                       env=GIT_ENV)
     if r.returncode != 0:
         raise NotGitRepo(f"{src} is not a git repository")
     return set(filter(None, r.stdout.decode().split("\0")))
@@ -49,10 +55,12 @@ def _scope(project_dir: str) -> tuple[Path, str]:
     return src, str(target.relative_to(src)) or "."
 
 
-def _aiignored(src: Path, scope: str) -> set[str]:
-    # git applies every .aiignore (root and nested) with gitignore semantics
+def _aiignored(src: Path, scope: str, with_tree: str | None = None) -> set[str]:
+    # git applies every .aiignore (root and nested) with gitignore semantics;
+    # with_tree also covers files that existed in that tree and were deleted since
+    extra = [f"--with-tree={with_tree}"] if with_tree else []
     return _git_files(src, "--cached", "--ignored", "--exclude-per-directory=.aiignore",
-                      "--", scope)
+                      *extra, "--", scope)
 
 
 def make_snapshot(project_dir: str) -> str:
@@ -73,19 +81,17 @@ def make_snapshot(project_dir: str) -> str:
 def safe_diff(project_dir: str, base: str) -> str:
     """git diff base..HEAD limited to files the snapshot would include."""
     src, scope = _scope(project_dir)
-    r = subprocess.run(["git", "-C", str(src), "diff", "--name-only", "-z", f"{base}..HEAD",
-                        "--", scope], capture_output=True)
+    r = subprocess.run(["git", "-C", str(src), "diff", "--no-renames", "--name-only", "-z",
+                        f"{base}..HEAD", "--", scope], capture_output=True, env=GIT_ENV)
     if r.returncode != 0:
         raise NotGitRepo(f"cannot diff {base}..HEAD in {src}")
-    # shortcut: .aiignore is checked against the current index, so a file deleted on the
-    # branch is only filtered by name patterns; upgrade if .aiignore'd files get deleted
-    ignored = _aiignored(src, scope)
+    ignored = _aiignored(src, scope) | _aiignored(src, scope, with_tree=base)
     keep = [f for f in filter(None, r.stdout.decode().split("\0"))
             if not _is_secret(f) and f not in ignored]
     if not keep:
         return ""
-    r = subprocess.run(["git", "-C", str(src), "diff", f"{base}..HEAD", "--", *keep],
-                       capture_output=True, text=True)
+    r = subprocess.run(["git", "-C", str(src), "diff", "--no-renames", f"{base}..HEAD",
+                        "--", *keep], capture_output=True, text=True, env=GIT_ENV)
     return r.stdout
 
 

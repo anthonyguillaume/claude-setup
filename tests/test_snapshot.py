@@ -134,6 +134,29 @@ class SnapshotTest(unittest.TestCase):
         self.assertNotIn("hunter2", diff)
         self.assertNotIn("PRIVATE", diff)
 
+    def _two_commits(self, before, after):
+        repo = make_repo(before)
+        git = ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t"]
+        subprocess.run(git + ["commit", "-qm", "base"], check=True)
+        base = subprocess.run(git + ["rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        after(repo, git)
+        subprocess.run(git + ["add", "-A", "-f"], check=True)
+        subprocess.run(git + ["commit", "-qm", "change"], check=True)
+        return repo, base
+
+    def test_safe_diff_hides_deleted_aiignored_file(self):
+        def after(repo, git):
+            (repo / "private.md").unlink()
+        repo, base = self._two_commits({".aiignore": "private.md\n", "private.md": "PRIVATE"}, after)
+        self.assertNotIn("PRIVATE", snapshot.safe_diff(str(repo), base))
+
+    def test_safe_diff_filenames_are_literal_not_globs(self):
+        def after(repo, git):
+            (repo / ".env").write_text("PASSWORD=hunter2")
+            (repo / ".e*").write_text("2")
+        repo, base = self._two_commits({".env": "PASSWORD=old", ".e*": "1"}, after)
+        self.assertNotIn("hunter2", snapshot.safe_diff(str(repo), base))
+
     def test_snapshot_refuses_non_git_dir(self):
         d = tempfile.mkdtemp(prefix="nogit-")
         r = subprocess.run([sys.executable, str(ROOT / "bin/snapshot.py"), d],
