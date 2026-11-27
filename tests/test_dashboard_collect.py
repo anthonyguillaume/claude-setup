@@ -265,3 +265,18 @@ class AiTeamCollectTest(unittest.TestCase):
         board = collect.build_board({"repo_gh": None})
         self.assertIsNone(board["repo"])
         self.assertTrue(any(a["level"] == "warn" and "GitHub" in a["text"] for a in board["alerts"]))
+
+
+class DiscoverPlansTest(unittest.TestCase):
+    def test_plans_discovered_without_plans_json(self):
+        with tempfile.TemporaryDirectory() as repo:
+            d = os.path.join(repo, "docs/superpowers/plans")
+            os.makedirs(d)
+            with open(os.path.join(d, "2026-01-01-x.md"), "w") as f:
+                f.write("# Titre X\n\n### Task 1: a\n\n### Task 2: b\n\n### Task 3: c\n")
+            plans = _load_sources(repo)["plans"]
+        self.assertEqual(len(plans), 1)
+        p = plans[0]
+        self.assertEqual((p["id"], p["title"], p["tasksTotal"], p["status"]),
+                         ("2026-01-01-x", "Titre X", 3, "todo"))
+        self.assertEqual(p["planFile"], "docs/superpowers/plans/2026-01-01-x.md")

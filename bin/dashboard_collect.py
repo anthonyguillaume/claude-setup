@@ -449,6 +449,28 @@ def taches_plan(repo, plans):
     return heads, total
 
 
+def discover_plans(repo):
+    """Plans déduits de docs/superpowers/plans/*.md quand docs/dashboard/plans.json n'existe pas."""
+    plans = []
+    for path in sorted(glob.glob(os.path.join(repo, "docs/superpowers/plans/*.md"))):
+        if path.endswith(".progress.md"):
+            continue
+        texte = lire(path)
+        titre = re.search(r"^# (.+)$", texte, re.M)
+        rel = os.path.relpath(path, repo)
+        plans.append({
+            "id": os.path.basename(path)[:-3],
+            "title": titre.group(1).strip() if titre else os.path.basename(path)[:-3],
+            "status": "todo",
+            "tasksDone": 0,
+            "tasksTotal": len(re.findall(r"^### Task \d+", texte, re.M)),
+            "pr": None,
+            "planFile": rel,
+            "progressFile": rel[:-3] + ".progress.md",
+        })
+    return plans
+
+
 def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=None, git=None, deepseek_log_path=None):
     """Lit TOUTES les sources (journalisation Claude Code, registres, plans, STATUS.md, git, gh, journaux DeepSeek)
     et rend un dict lisible par build_board().
@@ -463,6 +485,7 @@ def load_sources(repo, projet, usage_path, repo_gh=None, plans_file=None, gh=Non
     except (OSError, ValueError):
         plans = []
     plans = [p for p in plans if isinstance(p, dict)] if isinstance(plans, list) else []
+    plans = plans or discover_plans(repo)
     runs, alerte_runs, prs, alerte_prs = [], None, [], None
     if repo_gh:
         runs, alerte_runs = github(gh, repo_gh, "runs", "databaseId,displayTitle,headBranch,status,conclusion,createdAt,updatedAt,url")
