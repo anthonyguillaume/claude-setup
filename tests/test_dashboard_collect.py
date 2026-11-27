@@ -280,7 +280,7 @@ class DiscoverPlansTest(unittest.TestCase):
         self.assertEqual(len(plans), 1)
         p = plans[0]
         self.assertEqual((p["id"], p["title"], p["tasksTotal"], p["status"]),
-                         ("2026-01-01-x", "Titre X", 3, "todo"))
+                         ("2026-01-01-x", "Titre X", 3, "not_started"))
         self.assertEqual(p["planFile"], "docs/superpowers/plans/2026-01-01-x.md")
 
 
@@ -373,3 +373,32 @@ class LiveAgentsAndCycleTest(unittest.TestCase):
                 with open(os.path.join(repo, ".superpowers/cycle.json"), "w") as f:
                     f.write(content)
                 self.assertIsNone(collect.build_board(_load_sources(repo))["cycle"])
+
+
+class ReviewFixesTest(unittest.TestCase):
+    def _repo_with_plan(self, repo, done):
+        d = os.path.join(repo, "docs/superpowers/plans")
+        os.makedirs(d, exist_ok=True)
+        with open(os.path.join(d, "2026-01-01-x.md"), "w") as f:
+            f.write("# X\n\n### Task 1: a\n\n### Task 2: b\n")
+        with open(os.path.join(d, "2026-01-01-x.progress.md"), "w") as f:
+            f.write("".join(f"Task {n}: complete\n" for n in done))
+
+    def test_discovered_plan_status_follows_progress(self):
+        for done, status in (([], "not_started"), ([1], "in_progress"), ([1, 2], "merged")):
+            with tempfile.TemporaryDirectory() as repo:
+                self._repo_with_plan(repo, done)
+                board = collect.build_board(_load_sources(repo))
+            self.assertEqual(board["plans"][0]["status"], status, done)
+
+    def test_discovered_not_started_plan_is_current(self):
+        with tempfile.TemporaryDirectory() as repo:
+            self._repo_with_plan(repo, [])
+            board = collect.build_board(_load_sources(repo))
+        self.assertIsNotNone(board["current"])
+
+    def test_usage_line_with_bad_types_is_ignored(self):
+        bad = json.dumps({"model": "gpt", "project": "/p", "ok": True, "tokens": "12"})
+        bad2 = json.dumps({"model": "gpt", "project": "/p", "ok": True, "tokens": {"x": 1}})
+        m = collect.build_board({"repo_gh": "a/b", "root": "/p", "usage_ai_team": bad + "\n" + bad2})["models"]
+        self.assertEqual(m["gpt"], {"calls": 2, "failed": 0, "tokens": 0})

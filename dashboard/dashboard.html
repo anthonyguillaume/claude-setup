@@ -288,8 +288,8 @@ function render(b) {
     const pct = p.tasksTotal ? 100 * p.tasksDone / p.tasksTotal : 0;
     const cls = p.status === 'merged' ? 'done' : p.status === 'in_progress' ? 'active' : '';
     const url = (prs.find((x) => x.number === p.pr) || {}).url || (p.pr && repository ? prUrl(p.pr) : null);
-    const pr = p.pr && url ? `<a href="${esc(url)}">PR #${p.pr}</a>` : p.pr ? `PR #${p.pr}` : '<span class="faint">pas de PR</span>';
-    return `<div class="card ${cls}"><div class="top"><span>${esc(p.id)}</span><span><b>${p.tasksDone ?? 0}</b> / ${p.tasksTotal || '?'}</span></div>
+    const pr = p.pr && url ? `<a href="${esc(url)}">PR #${esc(p.pr)}</a>` : p.pr ? `PR #${esc(p.pr)}` : '<span class="faint">pas de PR</span>';
+    return `<div class="card ${cls}"><div class="top"><span>${esc(p.id)}</span><span><b>${esc(p.tasksDone ?? 0)}</b> / ${esc(p.tasksTotal || '?')}</span></div>
       <h3>${esc(p.title)}</h3><div class="bar" role="img" aria-label="${Math.round(pct)} % des tâches"><i style="width:${pct}%;background:var(--ok)"></i></div>
       <div class="running" style="margin:0">${pill(p.status === 'in_progress' ? 'in_progress_plan' : p.status)}${pr}</div></div>`;
   }).join('');
@@ -353,7 +353,7 @@ function render(b) {
   // PR
   $('pr-n').textContent = `${prs.length} au total`;
   $('prs').innerHTML = head(['#', 'Titre', 'État']) +
-    (prs.slice(0, 20).map((p) => `<tr><td class="mono"><a href="${esc(p.url)}">#${p.number}</a></td><td>${esc(p.title)}</td><td>${pill(p.state)}</td></tr>`).join('') || empty(3, 'Aucune PR.'));
+    (prs.slice(0, 20).map((p) => `<tr><td class="mono"><a href="${esc(p.url)}">#${esc(p.number)}</a></td><td>${esc(p.title)}</td><td>${pill(p.state)}</td></tr>`).join('') || empty(3, 'Aucune PR.'));
 
   renderTimeline();
   renderMap(b);

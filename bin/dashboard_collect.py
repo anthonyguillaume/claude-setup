@@ -347,12 +347,13 @@ def models(usage_texte, root, claude_tokens, deepseek_tokens):
         m = out[row["model"]]
         m["calls"] += 1
         m["failed"] += 0 if row.get("ok") else 1
-        m["tokens"] += row.get("tokens") or 0
+        tokens = row.get("tokens")
+        m["tokens"] += tokens if isinstance(tokens, int) and not isinstance(tokens, bool) else 0
     return out
 
 
 def debates(fichiers):
-    """Compteurs des débats : seule la première ligne RESULT: et le nom de fichier sont lus, jamais le corps."""
+    """Compteurs des débats : seuls la première ligne et le nom de fichier sont retenus, jamais le corps."""
     out = {"total": 0, "agreement": 0, "disagreement": 0, "claudeOnly": 0, "unknown": 0, "recent": []}
     for f in sorted(fichiers or [], key=lambda f: f.get("name", ""), reverse=True):
         premiere = (f.get("text") or "").split("\n", 1)[0].strip()
@@ -394,6 +395,10 @@ def build_board(sources):
     regs = sources.get("registres") or {}
     transcriptions = sources.get("transcriptions") or []
     avancement(plans, regs, sources.get("total_taches"))
+    for p in plans:
+        if p.get("auto"):
+            fait, tout = p.get("tasksDone") or 0, p.get("tasksTotal") or 0
+            p["status"] = "merged" if tout and fait >= tout else "in_progress" if fait else "not_started"
     all_rows = [r for t in transcriptions for r in t.get("rows") or []]
     ds = deepseek(sources.get("usage_texte") or "", sources.get("deepseek_log") or "")
     runs = sources.get("runs") or []
@@ -546,7 +551,8 @@ def discover_plans(repo):
         plans.append({
             "id": os.path.basename(path)[:-3],
             "title": titre.group(1).strip() if titre else os.path.basename(path)[:-3],
-            "status": "todo",
+            "status": "not_started",
+            "auto": True,  # statut recalculé depuis l'avancement dans build_board
             "tasksDone": 0,
             "tasksTotal": len(re.findall(r"^### Task \d+", texte, re.M)),
             "pr": None,
