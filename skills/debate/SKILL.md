@@ -81,6 +81,6 @@ If gpt.py exits 2 or 3: run the Claude side only, write `RESULT: AGREEMENT (CLAU
 
 ## Rules
 
-- Never paste secrets, `.env` content or tokens into a brief. gpt.py already filters files.
+- Never paste secrets, `.env` content, tokens or a raw `git diff` into a brief. For a diff use `gpt.py --project <dir> --diff <base>` (filtered, written to BRANCH.diff).
 - Same brief for both sides. No leading questions, no hint of the expected answer.
 - No em dashes, middle dots or emoji in what you write.

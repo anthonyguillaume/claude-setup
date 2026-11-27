@@ -3,7 +3,7 @@
 
 Codex commands may only read that copy: no writes, no other file on the disk.
 
-Usage: gpt.py [--project DIR] [--resume SESSION_ID] [--timeout 600] < prompt.txt
+Usage: gpt.py [--project DIR [--diff BASE]] [--resume SESSION_ID] [--timeout 600] < prompt.txt
 stdout: GPT's last answer. stderr last line: "SESSION: <id>".
 Exit: 0 ok, 2 config problem (codex missing, not a git repo), 3 GPT unavailable.
 """
@@ -29,6 +29,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--project")
     ap.add_argument("--resume")
+    ap.add_argument("--diff", metavar="BASE", help="write the filtered BASE..HEAD diff to BRANCH.diff")
     ap.add_argument("--timeout", type=float, default=600)
     a = ap.parse_args()
 
@@ -37,9 +38,13 @@ def main():
         fail(2, "codex not installed")
     prompt = sys.stdin.read()
 
+    if a.diff and not a.project:
+        fail(2, "--diff needs --project")
     if a.project:
         try:
             workdir = snapshot.make_snapshot(a.project)
+            if a.diff:
+                Path(workdir, "BRANCH.diff").write_text(snapshot.safe_diff(a.project, a.diff))
         except snapshot.NotGitRepo as e:
             fail(2, str(e))
     else:
@@ -55,13 +60,17 @@ def main():
     perms = ["-c", 'default_permissions="ai-team-readonly"',
              "-c", 'permissions.ai-team-readonly.filesystem='
                    f'{{":root"="deny",":minimal"="read","{workdir}"="read"}}']
-    common = [*perms, "--skip-git-repo-check", "--json", "-o", str(out)]
+    # no user config (MCP servers, hooks run outside the sandbox), minimal env (no DB passwords)
+    isolation = ["--ignore-user-config", "-c", 'shell_environment_policy.inherit="core"']
+    # prompt on stdin ("-"): no argv size limit, not visible in ps, no "-" option confusion
+    common = [*perms, *isolation, "--skip-git-repo-check", "--json", "-o", str(out)]
     if a.resume:
-        cmd = [codex, "exec", "resume", *common, a.resume, prompt]
+        cmd = [codex, "exec", "resume", *common, a.resume, "-"]
     else:
-        cmd = [codex, "exec", "-C", workdir, *common, prompt]
+        cmd = [codex, "exec", "-C", workdir, *common, "-"]
     try:
-        r = subprocess.run(cmd, cwd=workdir, capture_output=True, text=True, timeout=a.timeout)
+        r = subprocess.run(cmd, cwd=workdir, input=prompt, capture_output=True, text=True,
+                           timeout=a.timeout)
     except subprocess.TimeoutExpired:
         fail(3, "timeout")
     if r.returncode != 0:

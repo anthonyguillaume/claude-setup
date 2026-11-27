@@ -98,6 +98,42 @@ class SnapshotTest(unittest.TestCase):
         out = Path(snapshot.make_snapshot(str(repo)))
         self.assertFalse((out / "link" / "hosts").exists())
 
+    def test_snapshot_does_not_follow_symlinked_parent_dir(self):
+        outside = Path(tempfile.mkdtemp(prefix="outside-"))
+        (outside / "app.json").write_text("TOPSECRET")
+        repo = make_repo({"conf/app.json": "ok", "a.py": "1"})
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t",
+                        "commit", "-qm", "x"], check=True)
+        (repo / "conf/app.json").unlink()
+        (repo / "conf").rmdir()
+        os.symlink(outside, repo / "conf")
+        out = Path(snapshot.make_snapshot(str(repo)))
+        self.assertFalse((out / "conf/app.json").exists())
+
+    def test_snapshot_excludes_dotnet_terraform_and_kube_secrets(self):
+        secrets = ["appsettings.Production.json", "src/Api/appsettings.Development.json",
+                   "infra/prod.tfvars", "key.ppk", ".kube/config", "kubeconfig", ".dockercfg"]
+        repo = make_repo({**{s: "SECRET" for s in secrets}, "appsettings.json": "{}"})
+        out = Path(snapshot.make_snapshot(str(repo)))
+        for s in secrets:
+            self.assertFalse((out / s).exists(), s)
+        self.assertTrue((out / "appsettings.json").exists())
+
+    def test_safe_diff_excludes_secrets_and_aiignore(self):
+        repo = make_repo({"a.py": "1", ".aiignore": "private.md\n"})
+        git = ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t"]
+        subprocess.run(git + ["commit", "-qm", "base"], check=True)
+        base = subprocess.run(git + ["rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        (repo / "a.py").write_text("2")
+        (repo / ".env").write_text("PASSWORD=hunter2")
+        (repo / "private.md").write_text("PRIVATE")
+        subprocess.run(git + ["add", "-f", "a.py", ".env", "private.md"], check=True)
+        subprocess.run(git + ["commit", "-qm", "change"], check=True)
+        diff = snapshot.safe_diff(str(repo), base)
+        self.assertIn("a.py", diff)
+        self.assertNotIn("hunter2", diff)
+        self.assertNotIn("PRIVATE", diff)
+
     def test_snapshot_refuses_non_git_dir(self):
         d = tempfile.mkdtemp(prefix="nogit-")
         r = subprocess.run([sys.executable, str(ROOT / "bin/snapshot.py"), d],

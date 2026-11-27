@@ -14,6 +14,8 @@ FAKE = textwrap.dedent(f"""\
     #!{sys.executable}
     import json, os, sys, time
     args = sys.argv[1:]
+    if args and args[-1] == "-":
+        sys.stdin.read()
     with open(os.environ["FAKE_LOG"], "w") as f:
         json.dump({{"args": args, "cwd": os.getcwd()}}, f)
     time.sleep(float(os.environ.get("FAKE_SLEEP", "0")))
@@ -63,6 +65,37 @@ class GptTest(unittest.TestCase):
         self.assertIn('":root"="deny"', joined)
         self.assertRegex(joined, r'"[^"]*ai-snapshot-[^"]*"="read"')
         self.assertNotIn(str(repo.resolve()), joined + log["cwd"])
+
+    def test_gpt_isolates_user_config_and_environment(self):
+        r = self.run_gpt()
+        self.assertEqual(r.returncode, 0, r.stderr)
+        joined = " ".join(self.logged()["args"])
+        self.assertIn("--ignore-user-config", joined)
+        self.assertIn('shell_environment_policy.inherit="core"', joined)
+
+    def test_gpt_reads_prompt_from_stdin_not_argv(self):
+        big = "-" + "x" * 2_000_000
+        r = self.run_gpt(prompt=big)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        args = self.logged()["args"]
+        self.assertEqual(args[-1], "-")
+        self.assertNotIn(big, args)
+
+    def test_gpt_diff_written_into_snapshot(self):
+        repo = Path(tempfile.mkdtemp(prefix="repo-"))
+        git = ["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t"]
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        (repo / "a.py").write_text("1")
+        subprocess.run(git + ["add", "a.py"], check=True)
+        subprocess.run(git + ["commit", "-qm", "b"], check=True)
+        base = subprocess.run(git + ["rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        (repo / "a.py").write_text("2")
+        subprocess.run(git + ["commit", "-qam", "c"], check=True)
+        fake = self.bindir / "codex"
+        fake.write_text(FAKE.replace("time.sleep(", "open(os.environ['FAKE_LOG'] + '.diff', 'w').write(open('BRANCH.diff').read()); time.sleep("))
+        r = self.run_gpt("--project", str(repo), "--diff", base)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("a.py", (self.bindir / "log.json.diff").read_text())
 
     def test_gpt_resume_passes_session(self):
         r = self.run_gpt("--resume", "abc")
