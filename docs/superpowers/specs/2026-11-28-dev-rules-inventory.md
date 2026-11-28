@@ -6,7 +6,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 
 ## rules-index
 - AT-IDX-01 (nouvelle) : ordre d'autorité : `CLAUDE.md` global, `rules/team.md`, spec du projet, règles du projet, règles ai-team, skills.
-- AT-IDX-02 (O SK-06, B README) : un conflit entre deux sources est signalé, jamais tranché en silence ; la session principale le note dans `docs/decisions.md` du projet s'il existe, sinon dans `.superpowers/progress.md`.
+- AT-IDX-02 (O SK-06, B README) : un conflit entre deux sources est signalé, jamais tranché en silence ; un agent en lecture seule le signale comme constat ; la session principale le note dans `docs/decisions.md` du projet s'il existe, sinon dans `.superpowers/progress.md`.
 - AT-IDX-03 (nouvelle) : les packs (`multitenant-postgres`, `audit-trail`) ne s'appliquent que si le `CLAUDE.md` du projet contient la ligne `Packs ai-team : <noms>` ; l'agent charge alors le skill du pack avec l'outil Skill.
 - AT-IDX-04 (nouvelle) : une règle qui suppose un outil (gitleaks, Docker, Trivy, Semgrep, linter, cible `make`) ne s'applique que si l'outil est présent ; jamais d'installation.
 
