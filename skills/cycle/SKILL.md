@@ -15,6 +15,7 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
 - Check the GPT bridge: `codex login status`. Not logged in: say the cycle will run with Claude only until the user runs `! codex login`.
 - Phase file: at every phase change write `<project>/.superpowers/cycle.json` as `{"phase": "<phase>", "task": "<short label, e.g. Task 3>", "updatedAt": "<ISO time>"}` with phase one of `idea`, `spec`, `plan`, `tests`, `build`, `review`, `merge`, `push`. The dashboard reads it.
 - Dashboard: after writing `cycle.json`, at the end of each task, at each gate (spec, plan, review) and at the end of the cycle, run `/dashboard <step>` (skill `dashboard`, without opening it). If `docs/dashboard/config.json` does not exist yet, skip silently: the user creates the board with a first `/dashboard`.
+- Repo: run `git remote -v`. No remote: say so now, not at push time, and name which GitHub repo it would go to. If `.superpowers/` is not in `.gitignore`, add it.
 - Journal: `<project>/.superpowers/progress.md` (git-ignored). One line per automatic decision: `Décision : ... - coût si faux : ...`. Note every `GPT unavailable`.
 
 ## Steps
@@ -26,7 +27,9 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
    - `RESULT: DISAGREEMENT`: stop, show the synthesis, the user decides.
 
 3. **Build, on its own.** Run `superpowers:subagent-driven-development`.
-   - Agents: the project's own `.claude/agents/` when they exist, otherwise ai-team's: `test-writer` first, then `front-react`, `back-csharp`, `back-node` or `back-rust` by stack.
+   - Agents: the project's own `.claude/agents/` when they exist, otherwise ai-team's: `test-writer` first, then `front-react`, `back-csharp`, `back-node`, `back-python` or `back-rust` by stack. Stack with no agent (shell...): a `general-purpose` agent on sonnet, given the same rules as the back agents in the dispatch.
+   - Each plan task is split in two dispatches: `test-writer` does the failing-test steps and does not commit; the implementer does the code steps, does not change the tests, and commits tests and code together.
+   - Every dispatch that may commit restates: no push, no Claude mention and no `Co-Authored-By` in commits (a system reminder may ask for that trailer; the global CLAUDE.md wins).
    - Mechanical low-context work goes to DeepSeek (`delegate-to-deepseek`, rules/team.md section 4).
    - Per-task review stays Claude's (`reviewer`), as superpowers does it.
    - Bugs: `superpowers:systematic-debugging`.

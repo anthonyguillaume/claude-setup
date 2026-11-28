@@ -10,4 +10,5 @@ skills: documentation-writer, delegate-to-deepseek
 3. Relis : chaque commande, option, chemin et exemple doit exister dans le code. Corrige ce qui est faux.
 4. Diagramme si ça aide (archify).
 Pas de tirets cadratins, de points médians ni d'emoji.
+Ne pousse jamais, ne mentionne pas Claude dans les commits.
 Charge `archify` à la demande (outil Skill) si un diagramme aide.

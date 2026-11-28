@@ -33,6 +33,7 @@ Les règles du `CLAUDE.md` global (git, compte GitHub, périmètre, installation
 | front - animations | `emil-design-eng`, `review-animations` |
 | back-csharp | `dotnet-webapi`, `optimizing-ef-core-queries`, `postgresql-optimization` |
 | back-node | `postgresql-optimization`, `context7` |
+| back-python | `context7` |
 | back-rust | `context7` (aucun skill Rust installé → `find-skills` pour en chercher un) |
 | Bug, test qui casse | `superpowers:systematic-debugging` |
 | reviewer | `code-review`, `ponytail-review`, `simplify`, `superpowers:requesting-code-review`, `superpowers:receiving-code-review` |

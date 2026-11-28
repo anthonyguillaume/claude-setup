@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 AGENTS = sorted((ROOT / "agents").glob("*.md"))
 EXPECTED = {
     "challenger": "sonnet", "product-owner": "fable", "front-react": "sonnet",
-    "back-csharp": "sonnet", "back-node": "sonnet", "back-rust": "opus",
+    "back-csharp": "sonnet", "back-node": "sonnet", "back-python": "sonnet", "back-rust": "opus",
     "test-writer": "sonnet", "reviewer": "opus", "security": "opus",
     "qa": "sonnet", "doc-writer": "sonnet",
 }
