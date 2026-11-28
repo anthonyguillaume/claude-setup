@@ -17,19 +17,19 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-GIT-04 (O GIT-04, B) : aucune mention de Claude, aucun `Co-Authored-By`, dans les commits et les PR.
 - AT-GIT-05 (O GIT-05, B) : PR de 400 lignes au plus, mesurées par `git diff --shortstat <base>..HEAD` (ajouts plus suppressions) hors tests, fichiers générés, lockfiles, docs et fichiers de traduction ; au-delà, découper.
 - AT-GIT-06 (O GIT-06) : la gate est locale et sa sortie va dans la PR ; commande du projet (`make ci-local`, sinon `make test lint`, sinon la commande de test du plan).
-- AT-GIT-07 (O GIT-07) : fusion seulement après `APPROVE` du reviewer sans `[bloquant]` ; passe sécurité dédiée sur les chemins sensibles.
-- AT-GIT-08 (O GIT-08) : squash merge, historique linéaire, fusion par la session principale seule (jamais par un sous-agent).
+- AT-GIT-07 (O GIT-07) : fusion seulement après `APPROVE` du reviewer sans `[bloquant]` ; quand il y a une PR, verdict collé dans la PR ; passe sécurité dédiée sur les chemins sensibles.
+- AT-GIT-08 (O GIT-08) : squash merge, historique linéaire, fusion par la session principale seule (jamais par un sous-agent), y compris la fusion locale sans PR.
 - AT-GIT-09 (O GIT-09) : deux `REQUEST_CHANGES` de suite sur les mêmes points : on s'arrête, l'utilisateur tranche.
 - AT-GIT-10 (O GIT-10, B) : jamais de push sur `main`, jamais `--force` ni `--force-with-lease` sur aucune branche, jamais `--no-verify`, jamais réécrire un historique fusionné, jamais de secret ni de `.env` commité ; jamais de push sans accord explicite.
 - AT-GIT-11 (O GIT-11) : plusieurs comptes `gh` : `GH_TOKEN=$(gh auth token -u <compte>)` par commande, compte choisi selon le `CLAUDE.md` global ; jamais `gh auth switch`.
-- AT-GIT-12 (O GIT-12) : workflows GitHub durcis (skill `github-actions-hardening`) ; CI déclenchée à la main si le projet l'a choisi.
+- AT-GIT-12 (O GIT-12) : workflows GitHub durcis (skill `github-actions-hardening`) ; CI manuelle (`workflow_dispatch`) ni sur PR ni sur push de branche si le projet l'a choisie.
 - AT-GIT-13 (O GIT-13) : docs, fichiers de traduction et données importées ne comptent pas dans la taille de PR.
-- AT-GIT-14 (B) : nom de branche `type/<scope>-<sujet>` ; `gh pr merge --squash --delete-branch`.
+- AT-GIT-14 (B) : nom de branche `type/<scope>-<sujet>` ; quand il y a une PR, `gh pr merge --squash --delete-branch`.
 
 ## rules-testing
 - AT-TST-01 (O TST-01) : un test protège un comportement ou une règle (« échoue si on casse ... ») ; sinon il n'est pas écrit.
 - AT-TST-02 (O TST-02, B) : TDD partout : test rouge pour la bonne raison, puis code, puis vert ; un bug corrigé a un test qui échouait avant.
-- AT-TST-04 (O TST-04) : par endpoint : cas nominal, 422, 401, 403, 404 ; plus isolation et audit si les packs sont actifs.
+- AT-TST-04 (O TST-04) : par endpoint : cas nominal, 422, 401, 403, 404 ; isolation pour les endpoints du pack multitenant-postgres, assertions d'audit et événements AT-AUD-04 si le pack audit-trail est actif.
 - AT-TST-07 (O TST-07) : seuil de couverture seulement sur la couche domaine ; ailleurs mesuré sans seuil.
 - AT-TST-08 (O TST-08) : tests interdits : getters et DTO, le framework lui-même, mock qui se teste lui-même, même cas à deux niveaux, snapshots complets.
 - AT-TST-09 (O TST-09) : déterministe : pas de sleep, pas d'horloge réelle, pas d'ordre entre tests, pas de donnée mutable partagée.
@@ -58,9 +58,9 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - Checklist de PR (O) : les points de la checklist source, sans les 2 points propres aux packs (6 points) ; table OWASP ASVS 5.0 L2 et API Top 10 (O).
 
 ## rules-api-rest
-- AT-API-01 (O API-01) : `/api/v1`, ressources au pluriel en kebab-case, JSON en camelCase, pas de verbe dans l'URL.
+- AT-API-01 (O API-01) : `/api/v1` au départ, `/api/v2` en cas de rupture, routes d'exploitation sans préfixe ; ressources au pluriel en kebab-case, JSON en camelCase, pas de verbe dans l'URL.
 - AT-API-02 (O API-02) : identifiants UUID opaques, contrôle de l'objet à chaque accès.
-- AT-API-03 (O API-03) : table verbes et codes (201 + `Location`, 204, 409, 412, 422, 429) ; jamais 200 avec une erreur dans le corps.
+- AT-API-03 (O API-03) : table verbes et codes (201 + `Location`, 204, 400, 401, 403, 404, 409, 412, 422, 428, 429) ; un GET ne modifie jamais d'état ; jamais 200 avec une erreur dans le corps.
 - AT-API-04 (O API-04) : PUT et DELETE idempotents.
 - AT-API-05 (O API-05) : erreurs RFC 9457 `application/problem+json` avec `code` et `traceId`.
 - AT-API-06 (O API-06) : aucune fuite dans un 500 ; pas de distinction 404 / 403 quand elle révèle quelque chose.
@@ -82,7 +82,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-DB-07 (OI DB-07) : toute requête de liste a un index, colonnes de filtre et de tri en tête ; `EXPLAIN (ANALYZE, BUFFERS)` collé dans la PR.
 - AT-DB-08 (O DB-08) : lectures par projection et sans suivi (`AsNoTracking` en EF), pas d'Include en cascade.
 - AT-DB-09 (O DB-09) : pas de N+1, SQL brut paramétré.
-- AT-DB-10 (O DB-10) : une transaction par requête, verrous consultatifs transactionnels seulement.
+- AT-DB-10 (O DB-10) : une transaction par requête (ouverte par le pipeline en option A .NET, explicitement ailleurs), verrous consultatifs transactionnels seulement.
 - AT-DB-11 (O DB-11) : colonnes de données personnelles listées dans un registre, aucun secret en clair.
 - AT-DB-12 (O DB-12) : 30 requêtes SQL au plus par requête HTTP, vérifié en test si la stack le permet.
 
@@ -94,16 +94,16 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-OPS-06 (O OPS-06) : tests et lint en conteneur, seuls Docker et Git requis sur la machine.
 - AT-OPS-07 (O OPS-07) : `/health/live` et `/health/ready`.
 - AT-OPS-08 (O OPS-08) : logs JSON sur stdout, `traceId` dans les logs, OpenTelemetry si présent.
-- AT-OPS-09 (O OPS-09 + GIT-12) : CI sobre : gate locale qui fait foi, CI manuelle, image publiée sur tag avec scan si l'outil est présent.
+- AT-OPS-09 (O OPS-09 + GIT-12) : CI sobre : aucun workflow automatique sur pull request ni sur push de branche, publication sur tag `v*` permise ; gate locale qui fait foi, workflow à la main, scan avant publication si l'outil est présent.
 - AT-OPS-11 (O OPS-11) : compose de prod avec `restart: unless-stopped` et limites de ressources.
 - AT-OPS-12 (O OPS-12) : runtimes LTS seulement.
 
 ## rules-backend-dotnet
 - AT-BE-02 (O BE-02) : organisation par fonctionnalité, un dossier par cas d'usage, pas d'import entre fonctionnalités.
-- AT-BE-03 (O BE-03) : handlers `internal sealed`.
+- AT-BE-03 (O BE-03) : handlers, validateurs et comportements `internal sealed` (option A), types internes par défaut (option B) ; seuls les types de l'API sont `public`, tests via `InternalsVisibleTo`.
 - AT-BE-05 (O BE-05) : `Result<T>` avec un `Error.Code` stable en anglais ; exceptions pour l'imprévu seulement.
 - AT-BE-06 (O BE-06) : codes d'erreur = contrat : jamais renommés ni réutilisés, traductions dans la même PR.
-- AT-BE-07 (O BE-07) : validation dans le pipeline, erreurs par champ, invariants dans les entités.
+- AT-BE-07 (O BE-07) : validation avant toute logique métier ou effet de bord (pipeline en option A, filtre ou appel explicite en option B), erreurs par champ, invariants aussi dans les entités.
 - AT-BE-10 (O BE-10) : interface seulement à une vraie frontière ou une vraie variation.
 - AT-BE-11 (O BE-11) : `TimeProvider`, jamais `DateTime.Now`, UTC.
 - AT-BE-12 (O BE-12) : async de bout en bout avec `CancellationToken`, pas de `.Result`, `.Wait()` ni `async void`.
@@ -112,7 +112,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-BE-15 (O BE-15) : conventions C# Microsoft, `dotnet format --verify-no-changes`.
 - AT-BE-16 (O BE-16) : code en anglais, commentaires dans la langue du projet pour le pourquoi, pas de `TODO` sans dette notée.
 - AT-BE-17 (O BE-01, 04, 08, 09) : option A : Clean Architecture (Api, Application, Domain, Infrastructure), Mediator, pipeline validation puis transaction puis handler, DbContext étroit.
-- AT-BE-18 (B) : option B, par défaut quand le projet n'a pas de Mediator : endpoints par fonctionnalité avec handlers statiques, sans Mediator ni CQRS.
+- AT-BE-18 (B) : option B (par défaut) : endpoints par fonctionnalité avec handlers statiques, sans Mediator ni CQRS.
 - Section SOLID (O).
 
 ## rules-backend-node
@@ -147,7 +147,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-FE-05 (O FE-05) : client d'API généré jamais modifié à la main.
 - AT-FE-06 (O FE-06) : état préféré dans l'ordre : local, dérivé, URL, contexte étroit, librairie.
 - AT-FE-07 (O FE-07) : validation client pour l'UX, le serveur fait foi, erreurs par champ reliées.
-- AT-FE-08 (O FE-08) : primitives accessibles enveloppées dans `shared/ui`, `<button>` et jamais `<div onClick>`.
+- AT-FE-08 (O FE-08) : primitives accessibles du projet enveloppées dans `shared/ui`, sinon éléments natifs, sinon motif WAI-ARIA APG avec clavier complet ; `<button>` et jamais `<div onClick>`.
 - AT-FE-09 (O FE-09) : TS `strict`, pas de `any`, `as` seulement commenté, `variant` plutôt que des booléens.
 - AT-FE-10 (O FE-10) : `useEffect` rare, mémoïsation seulement après mesure.
 - AT-FE-11 (O FE-11) : mobile d'abord, vérifié à 360 et 1280 px.
@@ -169,7 +169,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-UI-09 (O UI-09) : élément utilisé deux fois : primitive partagée.
 - AT-UI-16 (O UI-12, B) : cibles tactiles de 44 px sur mobile, 24 px sur ordinateur.
 - AT-UI-17 (O UI-13, 14, B) : icône décorative `aria-hidden`, bouton icône avec un libellé, graphique avec titre, légende et table de données ; pas d'emoji ni de police d'icônes.
-- AT-UI-18 (B) : `popover` et `<dialog>` natifs ; transitions de 150 ms coupées en mouvement réduit.
+- AT-UI-18 (B) : primitives accessibles du projet enveloppées dans `shared/ui`, sinon éléments natifs, sinon motif WAI-ARIA APG avec clavier complet ; transitions de 150 ms coupées en mouvement réduit.
 
 ## rules-i18n
 - AT-I18N-01 (O I18N-01) : langues du projet en variable (français par défaut), préférence utilisateur puis navigateur, `<html lang>` à jour.
@@ -198,8 +198,8 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 
 ## rules-pack-audit-trail
 - AT-AUD-02 (O AUD-02) : secrets masqués dans l'audit, IP et agent utilisateur seulement dans l'audit.
-- AT-AUD-03 (O AUD-03) : entrée d'audit dans la même transaction que l'action.
+- AT-AUD-03 (O AUD-03) : entrée d'audit dans la même transaction que l'action ; un refus d'accès ou un échec de connexion est une issue normale, transaction validée avec la trace.
 - AT-AUD-04 (O AUD-04) : liste minimale d'événements de sécurité audités.
-- AT-AUD-05 (O AUD-05) : audit par marqueur explicite (audité ou non audité) sur chaque commande.
+- AT-AUD-05 (O AUD-05) : audit opt-in par entité (marqueur « audité », propriétés sensibles ou techniques « non auditées »), avant et après ; colonnes techniques d'identité jamais tracées, leurs événements de sécurité le sont.
 - AT-AUD-07 (O AUD-07) : table d'audit en ajout seul, garantie par trigger et droits.
-- AT-AUD-08 (O AUD-08) : chaînage par hash sous verrou.
+- AT-AUD-08 (O AUD-08) : chaînage par hash sous verrou consultatif transactionnel par chaîne, commande `verify`, frontière d'empreinte après purge autorisée.

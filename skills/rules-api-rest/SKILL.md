@@ -5,7 +5,7 @@ description: "Règles de dev ai-team (API REST), préchargées par les agents. �
 
 # Règles API REST
 
-Portée : tous les endpoints HTTP du projet, sous le préfixe `/api/v1`. L'OpenAPI est générée, jamais écrite à la main.
+Portée : tous les endpoints HTTP du projet ; les ressources REST versionnées sont sous `/api/v1` au départ, `/api/v2` en cas de rupture (AT-API-12) ; les routes d'exploitation (`/health/live`, `/health/ready`) n'ont pas de préfixe. L'OpenAPI est générée, jamais écrite à la main.
 
 - **AT-API-01** Toute ressource REST versionnée commence par `/api/v1` ; les routes opérationnelles (`/health/live`, `/health/ready`) en sont exemptes. Ressources au pluriel en kebab-case (`/api/v1/user-accounts`), JSON en camelCase, aucun verbe dans l'URL sauf une action non-CRUD modélisée comme sous-ressource (`POST /api/v1/<ressource>-switches`).
 - **AT-API-02** Les identifiants exposés sont des UUID opaques : ni séquentiels, ni porteurs d'information. Un contrôle d'objet est fait à chaque accès par identifiant.
