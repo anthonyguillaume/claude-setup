@@ -57,7 +57,7 @@ class RulesTest(unittest.TestCase):
         text = path.read_text()
         m = re.match(r"---\n(.*?)\n---\n", text, re.S)
         self.assertTrue(m, f"{name}: pas de frontmatter")
-        fm = dict(re.match(r"(\w+):\s*(.*)", l).groups() for l in m.group(1).splitlines() if ":" in l)
+        fm = dict(x.groups() for x in (re.match(r"(\w+):\s*(.*)", l) for l in m.group(1).splitlines()) if x)
         self.assertEqual(fm.get("name"), name)
         self.assertRegex(fm.get("description", ""), r'^".+"$', f"{name}: description entre guillemets")
         lines = text.splitlines()
@@ -69,6 +69,7 @@ class RulesTest(unittest.TestCase):
                 self.assertTrue(rm, f"{name}: ligne mal formée: {l[:60]}")
                 ids.append(rm.group(1))
         self.assertEqual(len(ids), len(set(ids)), f"{name}: doublons")
+        self.assertEqual(text.count("**AT-"), len(ids), f"{name}: identifiant en gras hors ligne de règle")
         self.assertEqual(set(ids), set(inventory()[name]), f"{name}: identifiants")
 
     def check_group(self, names):
@@ -78,7 +79,7 @@ class RulesTest(unittest.TestCase):
 
     def test_skill_dirs_match_inventory(self):
         dirs = {d.name for d in (ROOT / "skills").glob("rules-*") if d.is_dir()}
-        self.assertLessEqual(dirs, set(inventory()))
+        self.assertEqual(dirs, set(inventory()))
 
     def test_core_skills(self):
         self.check_group(["rules-index", "rules-git", "rules-skills"])
@@ -123,6 +124,7 @@ class RulesTest(unittest.TestCase):
             self.assertIsNone(PROJECT_NAMES.search(path.read_text()), d.name)
 
     def test_agent_rules_matrix(self):
+        self.assertEqual({p.stem for p in (ROOT / "agents").glob("*.md")}, set(MATRIX))
         for p in sorted((ROOT / "agents").glob("*.md")):
             fm = re.match(r"---\n(.*?)\n---\n", p.read_text(), re.S).group(1)
             m = re.search(r"^skills:\s*(.*)$", fm, re.M)

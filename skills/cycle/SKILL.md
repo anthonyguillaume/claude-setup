@@ -36,7 +36,7 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
 
 4. **Branch review gate.** On the full branch diff, in parallel:
    - agent `reviewer` (Claude, Opus);
-   - GPT through agent `challenger` with the same instructions and the same `VERDICT:` format, run as `gpt.py --project <repo> --diff <base>`: the filtered diff (no secrets, `.aiignore` respected) is written to `BRANCH.diff` in GPT's copy and the brief tells GPT to read it. GPT gets no rule text and cites no rule IDs; only Claude's findings cite rules. Never paste the raw `git diff` into a brief;
+   - GPT through agent `challenger` with the same instructions and the same `VERDICT:` format, run as `gpt.py --project <repo> --diff <base>`: the filtered diff (no secrets, `.aiignore` respected) is written to `BRANCH.diff` in GPT's copy and the brief tells GPT to read it. GPT is not given the ai-team rule skills and cites no rule IDs; only Claude's findings cite rules. Never paste the raw `git diff` into a brief;
    - agent `security` if the diff touches auth, authorization, data isolation, crypto, secrets, file or URL input, CI workflows or LLM features;
    - agent `qa` if the diff touches UI.
 

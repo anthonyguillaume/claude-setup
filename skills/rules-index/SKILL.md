@@ -14,7 +14,7 @@ Ordre d'autorité, gestion des conflits, packs et outils. Les autres skills de r
 
 ## Qui charge quoi
 
-Chaque agent précharge ces skills de règles (champ `skills:`), sans le préfixe `rules-`. Les packs ne sont jamais préchargés.
+Chaque agent précharge ces skills de règles (champ `skills:`), sans le préfixe `rules-` (le tableau abrège les noms, les vrais noms sont `ai-team:rules-<thème>`). Les packs ne sont jamais préchargés.
 
 | Agent | Skills de règles préchargés |
 |---|---|
@@ -30,4 +30,4 @@ Chaque agent précharge ces skills de règles (champ `skills:`), sans le préfix
 | doc-writer | index, git |
 | challenger, product-owner | aucun |
 
-Un agent `general-purpose` lancé pour une stack sans agent dédié charge `rules-index`, `rules-git`, `rules-testing` et `rules-security` avec l'outil Skill.
+Un agent `general-purpose` lancé pour une stack sans agent dédié charge `ai-team:rules-index`, `ai-team:rules-git`, `ai-team:rules-testing` et `ai-team:rules-security` avec l'outil Skill.

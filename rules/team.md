@@ -29,7 +29,7 @@ Les règles du `CLAUDE.md` global (git, compte GitHub, périmètre, installation
 | Exécution du plan | `superpowers:subagent-driven-development`, `superpowers:dispatching-parallel-agents`, `delegate-to-deepseek`, `ponytail` (code minimal) |
 | test-writer | `superpowers:test-driven-development` |
 | front-react | `vercel-react-best-practices`, `impeccable`, `ui-ux-pro-max:ui-ux-pro-max`, `ui-ux-pro-max:ui-styling`, `ui-ux-pro-max:design-system`, `emil-design-eng` |
-| front - pages publiques / vitrine | `design-taste-frontend` |
+| front - pages vitrine (marketing, landing), jamais les écrans de l'application, connexion comprise | `design-taste-frontend`, `frontend-design:frontend-design` |
 | front - animations | `emil-design-eng`, `review-animations` |
 | back-csharp | `dotnet-webapi`, `optimizing-ef-core-queries`, `postgresql-optimization` |
 | back-node | `postgresql-optimization`, `context7` |

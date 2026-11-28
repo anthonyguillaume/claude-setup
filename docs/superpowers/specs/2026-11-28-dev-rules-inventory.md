@@ -55,7 +55,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-SEC-13 (O SEC-13) : chemins sensibles (auth, autorisation, isolation, crypto, secrets, upload, CI) : passe de l'agent `security` avec `owasp-security` et `differential-review`, jamais délégué à DeepSeek.
 - AT-SEC-14 (B) : fichiers envoyés : type vérifié par signature, taille maximale, `nosniff`.
 - AT-SEC-15 (OI) : jeton machine comparé en temps constant ; l'application refuse de démarrer si un secret a encore sa valeur d'exemple.
-- Checklist de PR (O) : 8 points, sans ceux des packs ; table OWASP ASVS 5.0 L2 et API Top 10 (O).
+- Checklist de PR (O) : les points de la checklist source, sans les 2 points propres aux packs (6 points) ; table OWASP ASVS 5.0 L2 et API Top 10 (O).
 
 ## rules-api-rest
 - AT-API-01 (O API-01) : `/api/v1`, ressources au pluriel en kebab-case, JSON en camelCase, pas de verbe dans l'URL.

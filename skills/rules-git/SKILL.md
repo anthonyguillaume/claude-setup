@@ -14,7 +14,7 @@ Branches, commits, pull requests, revue, fusion, compte GitHub et CI.
 - **AT-GIT-05** Une PR fait 400 lignes au plus (ajouts plus suppressions, mesurés par `git diff --shortstat <base>..HEAD`), hors tests, fichiers générés, lockfiles, docs et fichiers de traduction. Au-delà, découper.
 - **AT-GIT-06** La gate est locale et sa sortie est collée dans la PR : commande du projet (`make ci-local`, sinon `make test lint`, sinon la commande de test du plan).
 - **AT-GIT-07** Fusion seulement après `VERDICT: APPROVE` du reviewer sans point `[bloquant]`, verdict collé dans la PR. Un chemin sensible reçoit en plus une passe sécurité dédiée.
-- **AT-GIT-08** Squash merge, historique linéaire. La fusion est faite par la session principale seule, jamais par un sous-agent.
+- **AT-GIT-08** Squash merge, historique linéaire. La fusion est faite par la session principale seule, jamais par un sous-agent. Sans PR (fusion locale de /cycle), même règle : fusion par la session principale après APPROVE.
 - **AT-GIT-09** Après deux `REQUEST_CHANGES` de suite sur les mêmes points, on s'arrête et l'utilisateur tranche, avec le résumé des divergences. Pas de boucle.
 - **AT-GIT-10** Interdits : push sur `main`, `--force` ou `--force-with-lease` sur toute branche, `--no-verify`, réécriture d'un historique fusionné, commit d'un secret ou d'un `.env`. Jamais de push sans accord explicite. Si un hook échoue, corriger la cause.
 - **AT-GIT-11** Avec plusieurs comptes `gh`, préfixer chaque commande par `GH_TOKEN=$(gh auth token -u <compte>)`, le compte étant choisi selon le `CLAUDE.md` global. Jamais `gh auth switch`.
