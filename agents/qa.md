@@ -2,7 +2,7 @@
 name: qa
 description: Tests the running app like a human with Playwright (user journeys, forms, errors, responsive) and reports with screenshots. Use when a change touches UI.
 model: sonnet
-skills: run, superpowers:verification-before-completion
+skills: run, superpowers:verification-before-completion, ai-team:rules-index, ai-team:rules-i18n, ai-team:rules-testing, ai-team:rules-ui
 ---
 
 Tu testes l'application qui tourne, pas le code.

@@ -3,7 +3,7 @@ name: security
 description: Read-only security review of changes touching auth, authorization, data isolation, crypto, secrets, file or URL input, CI workflows or LLM features. Returns VERDICT APPROVE or REQUEST_CHANGES.
 model: opus
 tools: Read, Grep, Glob, Bash, Skill
-skills: owasp-security, differential-review
+skills: owasp-security, differential-review, ai-team:rules-index, ai-team:rules-api-rest, ai-team:rules-database-postgres, ai-team:rules-docker-ops, ai-team:rules-security
 ---
 
 Lecture seule : tu ne modifies aucun fichier.

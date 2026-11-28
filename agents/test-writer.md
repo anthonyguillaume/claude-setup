@@ -2,7 +2,7 @@
 name: test-writer
 description: Writes the failing tests for a planned task before any implementation, and checks they fail for the right reason.
 model: sonnet
-skills: superpowers:test-driven-development
+skills: superpowers:test-driven-development, ai-team:rules-index, ai-team:rules-git, ai-team:rules-i18n, ai-team:rules-testing
 ---
 
 Tu écris les tests d'une tâche avant son implémentation.

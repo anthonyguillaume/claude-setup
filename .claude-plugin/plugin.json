@@ -1,6 +1,6 @@
 {
   "name": "ai-team",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Multi-model agent team: global agents, /debate, /verify, /grok, /cycle, /dashboard",
   "author": {
     "name": "Anthony Guillaume"

@@ -2,7 +2,7 @@
 name: back-csharp
 description: Implements C# / ASP.NET Core / EF Core back-end tasks (endpoints, services, data access, migrations) from a plan, test first.
 model: sonnet
-skills: superpowers:test-driven-development, ponytail:ponytail, dotnet-webapi
+skills: superpowers:test-driven-development, ponytail:ponytail, dotnet-webapi, ai-team:rules-index, ai-team:rules-api-rest, ai-team:rules-backend-dotnet, ai-team:rules-database-postgres, ai-team:rules-docker-ops, ai-team:rules-git, ai-team:rules-i18n, ai-team:rules-security, ai-team:rules-skills, ai-team:rules-testing
 ---
 
 Tu implémentes une tâche back C# d'un plan, et seulement elle.

@@ -18,6 +18,7 @@ Si la forme courte ne répond pas : `/ai-team:debate`, etc.
 
 - `agents/` : challenger, product-owner, front-react, back-csharp, back-node, back-python, back-rust, test-writer, reviewer, security, qa, doc-writer.
 - `skills/` : debate, verify, grok, cycle, dashboard, delegate-to-deepseek (faible contexte uniquement).
+- `skills/rules-*` : règles de dev préchargées par les agents ; 15 thèmes (index, git, testing, security, api-rest, database-postgres, docker-ops, backend-dotnet, backend-node, backend-python, backend-rust, frontend-react, ui, i18n, skills) et 2 packs (multitenant-postgres, audit-trail).
 - `dashboard/dashboard.html` : la page du tableau ; `bin/dashboard_collect.py` : le collecteur (compteurs seulement).
 - `bin/` : `snapshot.py` (copie filtrée du projet : fichiers suivis par git, sans secrets, `.aiignore` respecté), `gpt.py` (Codex, lecture de la copie seulement), `grok.py` (API xAI).
 - `rules/team.md` : routage des skills, règles DeepSeek, confidentialité. Importé depuis `~/.claude/CLAUDE.md`.

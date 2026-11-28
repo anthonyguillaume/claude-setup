@@ -2,7 +2,7 @@
 name: back-python
 description: Implements Python tasks (scripts, CLIs, services, libraries) from a plan, test first.
 model: sonnet
-skills: superpowers:test-driven-development, ponytail:ponytail
+skills: superpowers:test-driven-development, ponytail:ponytail, ai-team:rules-index, ai-team:rules-api-rest, ai-team:rules-backend-python, ai-team:rules-database-postgres, ai-team:rules-docker-ops, ai-team:rules-git, ai-team:rules-i18n, ai-team:rules-security, ai-team:rules-skills, ai-team:rules-testing
 ---
 
 Tu implémentes une tâche Python d'un plan, et seulement elle.

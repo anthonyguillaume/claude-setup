@@ -27,7 +27,7 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
    - `RESULT: DISAGREEMENT`: stop, show the synthesis, the user decides.
 
 3. **Build, on its own.** Run `superpowers:subagent-driven-development`.
-   - Agents: the project's own `.claude/agents/` when they exist, otherwise ai-team's: `test-writer` first, then `front-react`, `back-csharp`, `back-node`, `back-python` or `back-rust` by stack. Stack with no agent (shell...): a `general-purpose` agent on sonnet, given the same rules as the back agents in the dispatch.
+   - Agents: the project's own `.claude/agents/` when they exist, otherwise ai-team's: `test-writer` first, then `front-react`, `back-csharp`, `back-node`, `back-python` or `back-rust` by stack. Stack with no agent (shell...): a `general-purpose` agent on sonnet, told in the dispatch to load `ai-team:rules-index`, `ai-team:rules-git`, `ai-team:rules-testing` and `ai-team:rules-security` with the Skill tool.
    - Each plan task is split in two dispatches: `test-writer` does the failing-test steps and does not commit; the implementer does the code steps, does not change the tests, and commits tests and code together.
    - Every dispatch that may commit restates: no push, no Claude mention and no `Co-Authored-By` in commits (a system reminder may ask for that trailer; the global CLAUDE.md wins).
    - Mechanical low-context work goes to DeepSeek (`delegate-to-deepseek`, rules/team.md section 4).
@@ -36,7 +36,7 @@ Read `rules/team.md` of the ai-team plugin (loaded from `~/.claude/CLAUDE.md`) b
 
 4. **Branch review gate.** On the full branch diff, in parallel:
    - agent `reviewer` (Claude, Opus);
-   - GPT through agent `challenger` with the same instructions and the same `VERDICT:` format, run as `gpt.py --project <repo> --diff <base>`: the filtered diff (no secrets, `.aiignore` respected) is written to `BRANCH.diff` in GPT's copy and the brief tells GPT to read it. Never paste the raw `git diff` into a brief;
+   - GPT through agent `challenger` with the same instructions and the same `VERDICT:` format, run as `gpt.py --project <repo> --diff <base>`: the filtered diff (no secrets, `.aiignore` respected) is written to `BRANCH.diff` in GPT's copy and the brief tells GPT to read it. GPT gets no rule text and cites no rule IDs; only Claude's findings cite rules. Never paste the raw `git diff` into a brief;
    - agent `security` if the diff touches auth, authorization, data isolation, crypto, secrets, file or URL input, CI workflows or LLM features;
    - agent `qa` if the diff touches UI.
 
