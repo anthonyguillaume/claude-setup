@@ -198,7 +198,7 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 
 ## rules-pack-audit-trail
 - AT-AUD-02 (O AUD-02) : secrets masqués dans l'audit, IP et agent utilisateur seulement dans l'audit.
-- AT-AUD-03 (O AUD-03) : entrée d'audit dans la même transaction que l'action ; un refus d'accès ou un échec de connexion est une issue normale, transaction validée avec la trace, sans écriture métier hors trace et état de sécurité prévu.
+- AT-AUD-03 (O AUD-03) : entrée d'audit dans la même transaction que l'action ; un refus d'accès ou un échec de connexion est une issue normale, transaction validée avec la trace, sans écriture métier ; seuls la trace et l'état de sécurité prévu sont validés.
 - AT-AUD-04 (O AUD-04) : liste minimale d'événements de sécurité audités.
 - AT-AUD-05 (O AUD-05) : audit opt-in par entité (marqueur « audité », propriétés sensibles ou techniques « non auditées »), avant et après ; colonnes techniques d'identité jamais tracées, leurs événements de sécurité le sont.
 - AT-AUD-07 (O AUD-07) : table d'audit en ajout seul, garantie par trigger et droits.
