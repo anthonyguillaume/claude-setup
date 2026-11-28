@@ -140,18 +140,46 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-BR-05 (O BE-14) : `cargo clippy -- -D warnings`, `cargo fmt --check`, licences vérifiées (`cargo deny` si présent).
 
 ## rules-frontend-react
-- AT-FE-01 à AT-FE-13, AT-FE-15 (O FE-01 à 13, 15) : structure `app/`, `features/`, `shared/` ; imports `shared` vers `features` vers `app` ; pas de barrels géants ; TanStack Query pour les appels serveur ; client généré jamais modifié ; préférence d'état locale, dérivée, URL, contexte étroit ; validation client pour l'UX, serveur qui fait foi ; primitives accessibles enveloppées dans `shared/ui` ; TS strict ; `useEffect` rare, mémoïsation après mesure ; mobile d'abord, vérifié à 360 et 1280 px ; exports nommés ; pas de librairie pour dix lignes ; pas d'`enum` TS.
+- AT-FE-01 (O FE-01) : structure `app/`, `features/<f>/{api,components,hooks,types}`, `shared/`, `api/` généré.
+- AT-FE-02 (O FE-02) : imports dans le sens `shared` vers `features` vers `app`, jamais d'une fonctionnalité à l'autre.
+- AT-FE-03 (O FE-03) : pas de barrel géant ni d'`export *` en cascade.
+- AT-FE-04 (O FE-04) : TanStack Query pour chaque appel serveur, fabriques de clés, invalidation après mutation (si le projet l'utilise).
+- AT-FE-05 (O FE-05) : client d'API généré jamais modifié à la main.
+- AT-FE-06 (O FE-06) : état préféré dans l'ordre : local, dérivé, URL, contexte étroit, librairie.
+- AT-FE-07 (O FE-07) : validation client pour l'UX, le serveur fait foi, erreurs par champ reliées.
+- AT-FE-08 (O FE-08) : primitives accessibles enveloppées dans `shared/ui`, `<button>` et jamais `<div onClick>`.
+- AT-FE-09 (O FE-09) : TS `strict`, pas de `any`, `as` seulement commenté, `variant` plutôt que des booléens.
+- AT-FE-10 (O FE-10) : `useEffect` rare, mémoïsation seulement après mesure.
+- AT-FE-11 (O FE-11) : mobile d'abord, vérifié à 360 et 1280 px.
+- AT-FE-12 (O FE-12) : exports nommés, `import type`, Prettier et ESLint bloquants s'ils sont présents.
+- AT-FE-13 (O FE-13) : pas de librairie pour dix lignes, version stable vérifiée dans le registre, lockfile, budget de bundle.
+- AT-FE-15 (O FE-15) : pas d'`enum` TS, unions littérales.
 - AT-FE-16 (O UI-15) : formulaires : messages traduits, `aria-describedby`, `aria-invalid`, focus sur la première erreur.
 - AT-FE-17 (B) : variante Next.js : composants serveur par défaut, `"use client"` seulement pour l'interaction, `error.tsx` et `not-found.tsx` par segment, filtres dans l'URL, thème jamais lu par le serveur.
 
 ## rules-ui
-- AT-UI-01 à AT-UI-09 (O UI-01 à 09) : tokens seulement ; clair et sombre ; texte 12 px minimum, corps 14 px ; WCAG 2.2 AA, la couleur ne porte jamais seule l'information ; jamais d'impasse ; libellé humain d'abord ; états complets (chargement, vide, erreur, succès) et confirmation des actions destructives ; ouvrir la maquette avant de construire un écran quand le projet en a ; élément utilisé deux fois : primitive partagée.
+- AT-UI-01 (O UI-01) : tokens seulement, aucune valeur de couleur, taille ou espacement en dur.
+- AT-UI-02 (O UI-02) : clair et sombre par `data-theme`, composants sur tokens sémantiques, les deux thèmes vérifiés.
+- AT-UI-03 (O UI-03) : texte 12 px minimum, corps 14 px, unités `rem`.
+- AT-UI-04 (O UI-04) : WCAG 2.2 AA : contraste, focus visible, clavier, ARIA, la couleur ne porte jamais seule l'information, mouvement réduit respecté.
+- AT-UI-05 (O UI-05) : jamais d'impasse : un message, une action, un chemin de retour.
+- AT-UI-06 (O UI-06) : libellé humain d'abord, identifiant technique en second et copiable.
+- AT-UI-07 (O UI-07) : états complets (chargement, vide, erreur, succès), confirmation des actions destructives.
+- AT-UI-08 (O UI-08) : quand le projet a des maquettes, les ouvrir avant de construire un écran, garder la structure, comparer la capture.
+- AT-UI-09 (O UI-09) : élément utilisé deux fois : primitive partagée.
 - AT-UI-16 (O UI-12, B) : cibles tactiles de 44 px sur mobile, 24 px sur ordinateur.
 - AT-UI-17 (O UI-13, 14, B) : icône décorative `aria-hidden`, bouton icône avec un libellé, graphique avec titre, légende et table de données ; pas d'emoji ni de police d'icônes.
 - AT-UI-18 (B) : `popover` et `<dialog>` natifs ; transitions de 150 ms coupées en mouvement réduit.
 
 ## rules-i18n
-- AT-I18N-01 à AT-I18N-08 (O I18N-01 à 08) : langues du projet en variable (français par défaut) ; aucune chaîne en dur ; une clé par sens, pas de concaténation ; pluriels ICU et `Intl` ; erreurs d'API traduites depuis `code` ; codes serveur en anglais ; test de parité des clés ; ajouter une langue = ajouter des fichiers.
+- AT-I18N-01 (O I18N-01) : langues du projet en variable (français par défaut), préférence utilisateur puis navigateur, `<html lang>` à jour.
+- AT-I18N-02 (O I18N-02) : aucune chaîne visible en dur, lint bloquant s'il est présent.
+- AT-I18N-03 (O I18N-03) : une clé par sens, clés hiérarchiques en camelCase, pas de concaténation.
+- AT-I18N-04 (O I18N-04) : pluriels ICU, `Intl` pour dates et nombres, dates ISO UTC depuis l'API.
+- AT-I18N-05 (O I18N-05) : erreurs d'API traduites depuis `code`, jamais le `detail` brut, repli `errors.unknown` avec le `traceId`.
+- AT-I18N-06 (O I18N-06) : côté serveur, codes en anglais ; seuls les e-mails sont traduits.
+- AT-I18N-07 (O I18N-07) : test de parité entre langues (clés, variables, clés utilisées).
+- AT-I18N-08 (O I18N-08) : ajouter une langue = ajouter des fichiers, jamais de logique `lang === 'fr'`.
 
 ## rules-skills
 - AT-SK-01 (O SK-01) : quel skill à quel moment, limité aux skills installés par le manifeste du plugin.
@@ -161,7 +189,17 @@ Sources : O = Orbital, OI = OrbitalInvest, B = bowtrail.
 - AT-SK-07 (O SK-07) : un skill se charge seulement quand la tâche le demande.
 
 ## rules-pack-multitenant-postgres
-- AT-MT-04, 05, 06, 08, 11 (O MT-04, 05, 06, 08, 11) et AT-TST-06 (O TST-06) : filtre global par locataire ; RLS `ENABLE` + `FORCE` avec `WITH CHECK` ; `set_config(..., true)`, jamais `SET` de session ; ressource d'un autre locataire : 404 ; test du schéma RLS.
+- AT-MT-04 (O MT-04) : filtre global par locataire dans l'ORM.
+- AT-MT-05 (O MT-05) : RLS `ENABLE` et `FORCE` sur chaque table à locataire, politique avec `WITH CHECK`.
+- AT-MT-06 (O MT-06) : contexte posé par `set_config(..., true)` dans la transaction, jamais un `SET` de session.
+- AT-MT-08 (O MT-08) : ressource d'un autre locataire : 404.
+- AT-MT-11 (O MT-11) : test du schéma : chaque table à locataire a sa politique RLS.
+- AT-TST-06 (O TST-06) : test d'isolation entre locataires sur chaque endpoint.
 
 ## rules-pack-audit-trail
-- AT-AUD-02, 03, 04, 05, 07, 08 (O AUD) : secrets masqués ; entrée d'audit dans la même transaction que l'action ; liste minimale d'événements de sécurité ; audit opt-in par marqueur ; table en ajout seul (trigger et droits) ; chaînage par hash sous verrou.
+- AT-AUD-02 (O AUD-02) : secrets masqués dans l'audit, IP et agent utilisateur seulement dans l'audit.
+- AT-AUD-03 (O AUD-03) : entrée d'audit dans la même transaction que l'action.
+- AT-AUD-04 (O AUD-04) : liste minimale d'événements de sécurité audités.
+- AT-AUD-05 (O AUD-05) : audit par marqueur explicite (audité ou non audité) sur chaque commande.
+- AT-AUD-07 (O AUD-07) : table d'audit en ajout seul, garantie par trigger et droits.
+- AT-AUD-08 (O AUD-08) : chaînage par hash sous verrou.
