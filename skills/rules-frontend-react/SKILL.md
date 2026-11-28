@@ -21,7 +21,7 @@ Portée : tout le code React / TypeScript du front-end. Interface visuelle : `ru
 - **AT-FE-12** Conventions TypeScript (Google TypeScript Style Guide) : `PascalCase` composants et types, `camelCase` variables et fonctions, `UPPER_SNAKE` constantes, exports nommés (export par défaut seulement pour les pages routées si l'outil l'exige), `const` par défaut, `import type` pour les types. Prettier et ESLint bloquants s'ils sont présents.
 - **AT-FE-13** Pas de nouvelle librairie pour ce que fait une dizaine de lignes ou le navigateur (dates : `Intl`). Version stable vérifiée dans le registre en ligne, licence permissive, lockfile commité, budget de bundle surveillé à l'ajout.
 - **AT-FE-15** Pas d'`enum` TypeScript : unions de littéraux de chaîne (`type Role = 'admin' | 'member'`), cohérentes avec le client généré.
-- **AT-FE-16** Formulaires : messages d'erreur traduits, affichés sous le champ, reliés au contrôle par `aria-describedby` et `aria-invalid`. À la soumission, le focus va au premier champ en erreur (comportement par défaut de react-hook-form, non désactivé). Un champ obligatoire est signalé par du texte dans le libellé, jamais par la couleur seule.
+- **AT-FE-16** Formulaires : messages d'erreur traduits, affichés sous le champ, reliés au contrôle par `aria-describedby` et `aria-invalid`. À la soumission, le focus va au premier champ en erreur (par défaut avec react-hook-form, si le projet l'utilise). Un champ obligatoire est signalé par du texte dans le libellé, jamais par la couleur seule.
 
 ## Variante Next.js
 

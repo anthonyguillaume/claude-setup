@@ -8,7 +8,7 @@ description: "Règles de dev ai-team (sécurité), préchargées par les agents.
 Cible : OWASP ASVS 5.0 niveau 2 et API Security Top 10. Chaque règle est cochée en revue.
 
 - **AT-SEC-01** Cookie de session `HttpOnly`, `Secure`, `SameSite=Lax`, host-only avec préfixe `__Host-`. Protection antiforgery sur toute écriture (POST, PUT, PATCH, DELETE), anonyme comprise. Les endpoints JSON répondent 415 aux autres types de contenu.
-- **AT-SEC-02** Mots de passe : hachage lent (PBKDF2 ou mieux), 12 caractères minimum, refus des mots de passe courants, verrouillage après 5 échecs pendant 15 min. Réinitialisation par lien à usage unique valable 1 h. Jamais de mot de passe dans un log ou une réponse.
+- **AT-SEC-02** Mots de passe : hachage lent (PBKDF2 ou mieux), 12 caractères minimum, refus des mots de passe courants, verrouillage après 5 échecs pendant 15 min. Réinitialisation par lien à usage unique valable 1 h. Jamais de mot de passe ni d'empreinte dans un log ou une réponse.
 - **AT-SEC-03** Retirer, désactiver ou rétrograder le dernier administrateur actif est refusé, sous verrou transactionnel (verrou consultatif ou `SELECT ... FOR UPDATE`) : sans lui, deux requêtes concurrentes passent chacune la vérification.
 - **AT-SEC-04** Rien de sensible dans le stockage du navigateur (jeton, mot de passe, donnée personnelle) hors cookie. Aucun secret dans le bundle front : les variables exposées au front sont publiques.
 - **AT-SEC-05** Pas d'injection : SQL toujours paramétré (jamais concaténé), pas de HTML brut sans assainissement revu, aucune commande shell construite depuis une entrée utilisateur, URLs sortantes validées par liste blanche (SSRF).
@@ -20,7 +20,7 @@ Cible : OWASP ASVS 5.0 niveau 2 et API Security Top 10. Chaque règle est coché
 - **AT-SEC-11** Chaîne d'approvisionnement : versions épinglées, lockfiles commités, licences permissives seulement. Scans des dépendances, des images et du code si les outils sont présents.
 - **AT-SEC-12** Aucune donnée personnelle dans les logs (ni e-mail, nom, mot de passe, jeton, cookie, IP complète) : des identifiants techniques seulement.
 - **AT-SEC-13** Chemins sensibles (authentification, session, autorisation, isolation des données, cryptographie, secrets, upload, CI) : passe de l'agent `security` avec `owasp-security` puis `differential-review`, en plus de la revue. Jamais délégué à DeepSeek.
-- **AT-SEC-14** Fichiers envoyés : type vérifié par signature (pas par l'en-tête seul), taille maximale, `X-Content-Type-Options: nosniff` au service.
+- **AT-SEC-14** Fichiers envoyés : type vérifié par signature (pas par l'en-tête seul), taille maximale (20 Mo par défaut), `X-Content-Type-Options: nosniff` au service.
 - **AT-SEC-15** Un jeton machine est comparé en temps constant. L'application refuse de démarrer si un secret a encore sa valeur d'exemple.
 
 ## Checklist par changement

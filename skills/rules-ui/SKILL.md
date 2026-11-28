@@ -18,4 +18,4 @@ Portée : tout écran et composant. Structure et code : `rules-frontend-react`. 
 - **AT-UI-09** Tout élément visuel utilisé deux fois vit dans une primitive partagée (`shared/ui`, variants par props typées). Ne pas recopier une longue chaîne de classes utilitaires dans plusieurs composants.
 - **AT-UI-16** Cibles tactiles d'au moins 44 x 44 px sur mobile et 24 x 24 px sur ordinateur (ou l'espacement équivalent autour, exception de WCAG 2.5.8).
 - **AT-UI-17** Une icône décorative est `aria-hidden` ; une icône seule dans un bouton ou un lien reçoit un libellé traduit. Un graphique a un titre, une description, une légende textuelle et la table de données équivalente, des textes d'axe d'au moins 12 px, et la couleur seule ne porte pas l'information. Pas d'emoji ni de police d'icônes : icônes SVG.
-- **AT-UI-18** Menus et infobulles en `popover` natif, panneaux modaux en `<dialog>` natif. Les transitions durent 150 ms et sont coupées sous `prefers-reduced-motion`.
+- **AT-UI-18** Menus en `popover` natif, panneaux modaux en `<dialog>` natif. Les transitions durent 150 ms et sont coupées sous `prefers-reduced-motion`.
