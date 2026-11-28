@@ -25,14 +25,15 @@ Les règles du `CLAUDE.md` global (git, compte GitHub, périmètre, installation
 |---|---|
 | Idée, produit (orchestrateur, product-owner) | `superpowers:brainstorming`, `epic-hypothesis`, `prioritization-advisor`, `roadmap-planning`, `workshop-facilitation` |
 | Comprendre l'existant | `graphify`, `context-mode`, `context7` (docs de librairies à jour) |
-| Spec, plan, architecture | `superpowers:writing-plans`, `archify` (diagrammes), `superpowers:using-git-worktrees` |
+| Spec, plan, architecture | `superpowers:writing-plans`, `archify` (diagrammes), `superpowers:using-git-worktrees` (tâches parallèles seulement) |
 | Exécution du plan | `superpowers:subagent-driven-development`, `superpowers:dispatching-parallel-agents`, `delegate-to-deepseek`, `ponytail` (code minimal) |
 | test-writer | `superpowers:test-driven-development` |
-| front-react | `vercel-react-best-practices`, `impeccable`, `frontend-design`, `ui-ux-pro-max:ui-ux-pro-max`, `ui-ux-pro-max:ui-styling`, `ui-ux-pro-max:design-system`, `emil-design-eng` |
-| front - pages publiques / vitrine | `design-taste-frontend` |
+| front-react | `vercel-react-best-practices`, `impeccable`, `ui-ux-pro-max:ui-ux-pro-max`, `ui-ux-pro-max:ui-styling`, `ui-ux-pro-max:design-system`, `emil-design-eng` |
+| front - pages vitrine (marketing, landing), jamais les écrans de l'application, connexion comprise | `design-taste-frontend`, `frontend-design:frontend-design` |
 | front - animations | `emil-design-eng`, `review-animations` |
 | back-csharp | `dotnet-webapi`, `optimizing-ef-core-queries`, `postgresql-optimization` |
 | back-node | `postgresql-optimization`, `context7` |
+| back-python | `context7` |
 | back-rust | `context7` (aucun skill Rust installé → `find-skills` pour en chercher un) |
 | Bug, test qui casse | `superpowers:systematic-debugging` |
 | reviewer | `code-review`, `ponytail-review`, `simplify`, `superpowers:requesting-code-review`, `superpowers:receiving-code-review` |
@@ -71,3 +72,8 @@ Si aucun skill ne couvre un besoin récurrent : proposer `find-skills` à l'util
 
 - Pas de tiret cadratin, pas de point médian, pas d'emoji : utiliser `-`.
 - Jamais de mention de Claude ni de `Co-Authored-By` dans les commits et les PR. Jamais de `git push` sans accord explicite.
+
+## 8. Règles de dev
+
+- Les règles de dev vivent dans les skills `rules-*`, préchargés par les agents selon leur rôle.
+- Ordre d'autorité : voir `rules-index`.

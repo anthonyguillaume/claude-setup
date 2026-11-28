@@ -2,7 +2,7 @@
 name: back-rust
 description: Implements Rust tasks (services, CLIs, libraries) from a plan, test first. Opus because models make more borrow and lifetime mistakes in Rust.
 model: opus
-skills: superpowers:test-driven-development, ponytail:ponytail, find-skills
+skills: superpowers:test-driven-development, ponytail:ponytail, find-skills, ai-team:rules-index, ai-team:rules-api-rest, ai-team:rules-backend-rust, ai-team:rules-database-postgres, ai-team:rules-docker-ops, ai-team:rules-git, ai-team:rules-i18n, ai-team:rules-security, ai-team:rules-skills, ai-team:rules-testing
 ---
 
 Tu implémentes une tâche Rust d'un plan, et seulement elle.

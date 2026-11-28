@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parent.parent
 AGENTS = sorted((ROOT / "agents").glob("*.md"))
 EXPECTED = {
     "challenger": "sonnet", "product-owner": "fable", "front-react": "sonnet",
-    "back-csharp": "sonnet", "back-node": "sonnet", "back-rust": "opus",
+    "back-csharp": "sonnet", "back-node": "sonnet", "back-python": "sonnet", "back-rust": "opus",
     "test-writer": "sonnet", "reviewer": "opus", "security": "opus",
     "qa": "sonnet", "doc-writer": "sonnet",
 }
@@ -46,6 +46,7 @@ class AgentsTest(unittest.TestCase):
     def test_agents_skills_exist(self):
         known = set((ROOT / "manifest/skills.txt").read_text().split())
         known |= {"debate", "verify", "cycle"}
+        known |= {f"ai-team:{d.name}" for d in (ROOT / "skills").iterdir() if (d / "SKILL.md").exists()}
         for p in AGENTS:
             for s in split(frontmatter(p).get("skills", "")):
                 self.assertIn(s, known, f"{p.name}: unknown skill {s}")
@@ -58,7 +59,7 @@ class AgentsTest(unittest.TestCase):
             self.assertNotIn("Write", tools)
 
     def test_no_forbidden_characters(self):
-        files = AGENTS + list((ROOT / "skills").rglob("*.md")) + list((ROOT / "rules").glob("*.md"))
+        files = AGENTS + list((ROOT / "skills").rglob("*.md")) + list((ROOT / "rules").rglob("*.md"))
         for p in files:
             self.assertIsNone(FORBIDDEN_CHARS.search(p.read_text()), p)
 

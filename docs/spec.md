@@ -103,6 +103,7 @@ Entrée : une question + des fichiers de contexte. Utilisable à la main (`/deba
 | front-react | Sonnet | `vercel-react-best-practices`, `impeccable` | Front React |
 | back-csharp | Sonnet | `dotnet-webapi`, `optimizing-ef-core-queries` | ASP.NET / EF Core |
 | back-node | Sonnet | - | Node / TypeScript |
+| back-python | Sonnet | - | Python (scripts, CLI, services) |
 | back-rust | Opus | - | Rust (plus d'erreurs des modèles sur l'emprunt/les durées de vie) |
 | test-writer | Sonnet | - | Tests d'abord, comme Orbital |
 | reviewer | Opus, lecture seule | `code-review`, `ponytail-audit` | Revue Claude ; tourne en parallèle d'une revue GPT |
@@ -180,6 +181,7 @@ Demande d'Anthony : utiliser **tous** les skills installés, au bon moment. Méc
 | front - animations | `emil-design-eng`, `review-animations` |
 | back-csharp | `dotnet-webapi`, `optimizing-ef-core-queries`, `postgresql-optimization` |
 | back-node | `postgresql-optimization`, `context7` |
+| back-python | `context7` |
 | back-rust | `context7` (aucun skill Rust installé → `find-skills` pour en chercher un) |
 | Bug, test qui casse | `superpowers:systematic-debugging` |
 | reviewer | `code-review`, `ponytail-review`, `simplify`, `superpowers:requesting-code-review`, `superpowers:receiving-code-review` |
